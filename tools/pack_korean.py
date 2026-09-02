@@ -33,6 +33,14 @@ DNS_LBA, CPK_LBA, EBOOT_LBA, SEC = 285712, 55248, 544, 2048
 DNS_SIZE = 591537680
 EBOOT_DUMP = (r'D:\psp\ppsspp_win\memstick\PSP\SYSTEM\DUMP'
               '\\NPJH50597_smp_rom.BIN')
+
+# The emulator's dump folder is shared with every other game and does get
+# overwritten: when it vanished, the build quietly shipped without the 52
+# executable strings (chapter cards, character intros). Keep our own copy,
+# decrypted once from the retail EBOOT with _eboot_decrypt, and fall back
+# to it rather than silently dropping the lot.
+EBOOT_PLAIN = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           '_assets', 'NPJH50597_eboot_plain.BIN')
 ENC = 'cp932'
 # The dump is a decrypted ELF produced by PPSSPP.  It is useful for reading
 # and translating the strings, but it must not replace the encrypted ~PSP PRX
@@ -288,9 +296,12 @@ def patch_eboot(table):
     """
     if HARDWARE_SAFE_EBOOT:
         return [], 0, ['hardware-safe build: encrypted EBOOT.BIN preserved']
-    if not os.path.exists(EBOOT_DUMP):
-        return [], 0, ['no decrypted dump at %s' % EBOOT_DUMP]
-    d = bytearray(open(EBOOT_DUMP, 'rb').read())
+    src = EBOOT_DUMP if os.path.exists(EBOOT_DUMP) else EBOOT_PLAIN
+    if not os.path.exists(src):
+        raise SystemExit('no decrypted EBOOT in %s nor %s; the build would '
+                         'drop all 52 executable strings'
+                         % (EBOOT_DUMP, EBOOT_PLAIN))
+    d = bytearray(open(src, 'rb').read())
     doc = json.load(open(os.path.join(UI_DIR, 'eboot.json'), encoding='utf-8'))
     done, over = 0, []
     for e in doc['entries']:

@@ -2711,7 +2711,7 @@
    "caller": "Utility_StartMsgDialog",
    "drawn": true,
    "ja": "戻る",
-   "ko": ""
+   "ko": "돌아가기"
   },
   {
    "id": "menu_title.lua@25574",
