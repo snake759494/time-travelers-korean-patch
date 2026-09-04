@@ -344,7 +344,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "１４時",
-   "ko": ""
+   "ko": "１４시"
   },
   {
    "id": "menu_charasel_00.lua@2839",
@@ -353,7 +353,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "１５時",
-   "ko": ""
+   "ko": "１５시"
   },
   {
    "id": "menu_charasel_00.lua@3299",
@@ -362,7 +362,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "１６時",
-   "ko": ""
+   "ko": "１６시"
   },
   {
    "id": "menu_charasel_00.lua@3759",
@@ -371,7 +371,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "１７時",
-   "ko": ""
+   "ko": "１７시"
   },
   {
    "id": "menu_charasel_00.lua@4219",
@@ -380,7 +380,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "１８時",
-   "ko": ""
+   "ko": "１８시"
   },
   {
    "id": "menu_charasel_00.lua@4662",
@@ -389,7 +389,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "１９時",
-   "ko": ""
+   "ko": "１９시"
   },
   {
    "id": "menu_charasel_00.lua@5239",
@@ -398,7 +398,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "５人組",
-   "ko": ""
+   "ko": "５인조"
   },
   {
    "id": "menu_charasel_00.lua@12152",
@@ -1217,7 +1217,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "１４時",
-   "ko": ""
+   "ko": "１４시"
   },
   {
    "id": "menu_charasel_12.lua@2778",
@@ -1226,7 +1226,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "１５時",
-   "ko": ""
+   "ko": "１５시"
   },
   {
    "id": "menu_charasel_12.lua@3238",
@@ -1235,7 +1235,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "１６時",
-   "ko": ""
+   "ko": "１６시"
   },
   {
    "id": "menu_charasel_12.lua@3698",
@@ -1244,7 +1244,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "１７時",
-   "ko": ""
+   "ko": "１７시"
   },
   {
    "id": "menu_charasel_12.lua@4158",
@@ -1253,7 +1253,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "１８時",
-   "ko": ""
+   "ko": "１８시"
   },
   {
    "id": "menu_charasel_12.lua@4601",
@@ -1262,7 +1262,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "１９時",
-   "ko": ""
+   "ko": "１９시"
   },
   {
    "id": "menu_charasel_12.lua@12204",
@@ -1505,7 +1505,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "３人組",
-   "ko": ""
+   "ko": "３인조"
   },
   {
    "id": "menu_charasel_17.lua@9167",
@@ -1604,7 +1604,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "４人組",
-   "ko": ""
+   "ko": "４인조"
   },
   {
    "id": "menu_charasel_18.lua@9175",
@@ -2459,7 +2459,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "全て",
-   "ko": ""
+   "ko": "전체"
   },
   {
    "id": "menu_tipslist2.lua@10735",
@@ -2477,7 +2477,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "新規",
-   "ko": ""
+   "ko": "신규"
   },
   {
    "id": "menu_tipslist2.lua@11770",
@@ -2495,7 +2495,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "キャラ",
-   "ko": ""
+   "ko": "캐릭터"
   },
   {
    "id": "menu_tipslist2.lua@13110",
@@ -2513,7 +2513,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "社会",
-   "ko": ""
+   "ko": "사회"
   },
   {
    "id": "menu_tipslist2.lua@14407",
@@ -2531,7 +2531,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "科学",
-   "ko": ""
+   "ko": "과학"
   },
   {
    "id": "menu_tipslist2.lua@15751",
@@ -2549,7 +2549,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "流行",
-   "ko": ""
+   "ko": "유행"
   },
   {
    "id": "menu_tipslist2.lua@17083",
@@ -2567,7 +2567,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "豆知識",
-   "ko": ""
+   "ko": "잡학"
   },
   {
    "id": "menu_tipslist2.lua@18447",
@@ -2585,7 +2585,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "裏話",
-   "ko": ""
+   "ko": "비화"
   },
   {
    "id": "menu_tipslist2.lua@19818",
@@ -2612,7 +2612,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "ＴＩＰＳを全部集めている",
-   "ko": ""
+   "ko": "ＴＩＰＳ를 전부 모았다"
   },
   {
    "id": "menu_title.lua@1520",
@@ -2621,7 +2621,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "ＴＩＰＳをまだ全部集めていない",
-   "ko": ""
+   "ko": "ＴＩＰＳ를 아직 전부 모으지 않았다"
   },
   {
    "id": "menu_title.lua@1692",
@@ -2630,7 +2630,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "ＴＩＭＥＳＴＯＰを全部見た",
-   "ko": ""
+   "ko": "ＴＩＭＥＳＴＯＰ을 전부 봤다"
   },
   {
    "id": "menu_title.lua@1741",
@@ -2639,7 +2639,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "ＴＩＭＥＳＴＯＰを全部見ていない",
-   "ko": ""
+   "ko": "ＴＩＭＥＳＴＯＰ을 전부 보지 않았다"
   },
   {
    "id": "menu_title.lua@1900",
@@ -2648,7 +2648,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "ＴＴフォンをクリアした",
-   "ko": ""
+   "ko": "ＴＴ폰을 클리어했다"
   },
   {
    "id": "menu_title.lua@1945",
@@ -2657,7 +2657,7 @@
    "caller": "Print",
    "drawn": false,
    "ja": "ＴＴフォンをクリアしていない",
-   "ko": ""
+   "ko": "ＴＴ폰을 클리어하지 않았다"
   },
   {
    "id": "menu_title.lua@12926",
@@ -2684,7 +2684,7 @@
    "caller": "Utility_StartMsgDialog",
    "drawn": true,
    "ja": "本ゲームはデータインストールに対応しています。\\nゲームデータを記録メディアにインストールしておくことで、ロード時間を短縮することができます。\\nより快適なプレイをお求めの方は、\\nデータインストールの使用をお勧め致します。",
-   "ko": ""
+   "ko": "본 게임은 데이터 인스톨을 지원합니다.\\n게임 데이터를 기록 미디어에 인스톨해 두면 로딩 시간을 줄일 수 있습니다.\\n보다 쾌적한 플레이를 원하시는 분은\\n데이터 인스톨 사용을 권장합니다."
   },
   {
    "id": "menu_title.lua@24193",
@@ -2693,7 +2693,7 @@
    "caller": "Utility_StartMsgDialog",
    "drawn": true,
    "ja": "インストールデータが既に存在します。\\nインストールしなおしますか？",
-   "ko": ""
+   "ko": "인스톨 데이터가 이미 존재합니다.\\n다시 인스톨하시겠습니까?"
   },
   {
    "id": "menu_title.lua@24263",
@@ -2702,7 +2702,7 @@
    "caller": "Utility_StartMsgDialog",
    "drawn": true,
    "ja": "決定",
-   "ko": ""
+   "ko": "확인"
   },
   {
    "id": "menu_title.lua@24271",
@@ -2720,7 +2720,7 @@
    "caller": "Utility_StartMsgDialog",
    "drawn": true,
    "ja": "インストールが中止されました。",
-   "ko": ""
+   "ko": "인스톨이 중지되었습니다."
   },
   {
    "id": "menu_title.lua@25608",
@@ -2729,7 +2729,7 @@
    "caller": "Utility_StartMsgDialog",
    "drawn": true,
    "ja": "決定",
-   "ko": ""
+   "ko": "확인"
   },
   {
    "id": "menu_tutorial.lua@11759",
@@ -2765,7 +2765,7 @@
    "caller": "?",
    "drawn": false,
    "ja": "１５：００へつづく",
-   "ko": ""
+   "ko": "１５：００으로 계속"
   },
   {
    "id": "end_save.lua@3044",
@@ -2774,7 +2774,7 @@
    "caller": "?",
    "drawn": false,
    "ja": "１６：００へつづく",
-   "ko": ""
+   "ko": "１６：００으로 계속"
   },
   {
    "id": "end_save.lua@3110",
@@ -2783,7 +2783,7 @@
    "caller": "?",
    "drawn": false,
    "ja": "１７：００へつづく",
-   "ko": ""
+   "ko": "１７：００으로 계속"
   },
   {
    "id": "end_save.lua@3176",
@@ -2792,7 +2792,7 @@
    "caller": "?",
    "drawn": false,
    "ja": "１８：００へつづく",
-   "ko": ""
+   "ko": "１８：００으로 계속"
   },
   {
    "id": "end_save.lua@3242",
@@ -2801,7 +2801,7 @@
    "caller": "?",
    "drawn": false,
    "ja": "１９：００へつづく",
-   "ko": ""
+   "ko": "１９：００으로 계속"
   },
   {
    "id": "end_save.lua@3308",
@@ -2810,7 +2810,7 @@
    "caller": "?",
    "drawn": false,
    "ja": "タイムトラベラー[編/へん]へつづく",
-   "ko": ""
+   "ko": "타임 트래블러 편으로 계속"
   },
   {
    "id": "end_save.lua@3585",

@@ -125,15 +125,22 @@ MAINMENU = {
 }
 # The chapter name that heads the same menu, on the archive's second sheet.
 # It was never in this file, so 'キャスター編' sat in Japanese over a menu that
-# was otherwise all Korean. Every archive carries all six names; the quads run
-# down the sheet on a 24px pitch, flush to x=84 with the reading above.
+# was otherwise all Korean.
+#
+# The sheet carries all six names on a 24px pitch, but each archive's .pvb
+# names only its own, and every one of those quads is tight around its own
+# word -- 43px for the three of 刑事編, 84 for the six of キャスター編. Giving
+# them all the widest box let '형사 편' be set flush to x=78 and start at 18,
+# well left of the 37 the game samples from, so the first syllable was simply
+# not drawn. These are the quads themselves, with the two the disc does not
+# name taken from where the retail lettering sits (x0 = ink - 2).
 MAINMENU_CHAPTER = {
-    (0, 224, 84, 244): '고교생 편',
-    (0, 248, 84, 268): '사기꾼 편',
-    (0, 272, 84, 292): '루상치 편',
-    (0, 296, 84, 316): '형사 편',
+    (22, 224, 84, 244): '고교생 편',
+    (24, 248, 84, 268): '사기꾼 편',
+    (12, 272, 84, 292): '루상치 편',
+    (37, 296, 80, 316): '형사 편',
     (0, 320, 84, 340): '캐스터 편',
-    (0, 344, 84, 364): '미코토 편',
+    (25, 344, 84, 364): '미코토 편',
 }
 MAINMENU_ARCHIVES = ['mainmenu_keijihen_big.xa', 'mainmenu_koukouseihen_big.xa',
                      'mainmenu_kyasutahen_big.xa', 'mainmenu_mikotohen_big.xa',

@@ -14,6 +14,7 @@ from PIL import Image, ImageFont, ImageDraw
 
 import cpk, dnsfile, crilayla, pgd, fnt, xpck, imgp, l5enc, aux_fonts
 import extract_lua, extract_flo, imgp8, menu_tex, menu_ko, cfgbin, pgdtool
+import telop_tex, telop_ko
 import patch_table
 import patch_call
 import build_expand2 as B
@@ -80,7 +81,7 @@ DNS_LIMIT = 0
 #   flo  time-travel chart        scn  choices
 #   menu menu artwork             lua  menu and system messages
 DNS_STAGES = frozenset(['pck', 'cfg', 'flo', 'scn', 'menu', 'lua', 'table',
-                        'call'])
+                        'call', 'telop'])
 # Diagnostic: leave these sheets in Japanese. The two named here are the only
 # ones whose rewritten block comes out of the method-2 encoder, which is the
 # one encoder whose output was never shown to match what the game shipped --
@@ -579,6 +580,55 @@ def patch_menu(c, d):
                       (row + 8, struct.pack('>I', len(comp))),
                       (row + 12, struct.pack('>I', len(out)))]
         done += hit
+    return edits, done, skipped
+
+
+def patch_telop(c, d):
+    """Redraw the plates that announce a character.
+
+    Each one is a texture in the chapter that first shows that character, so
+    they are reached through psp/cpk/separate rather than the top-level CPK.
+    All of them are stored uncompressed there, and the redrawn .xi keeps its
+    length, so each plate is written back exactly where it was.
+    """
+    edits, done, skipped = [], 0, []
+    for e in sorted((x for x in c.files if x['dir'] == 'psp/cpk/separate'),
+                    key=lambda x: x['name']):
+        try:
+            inner = cpk.CPK(Window(d, e['offset'], e['size']))
+        except Exception:
+            continue
+        for x in inner.files:
+            if x['dir'] != 'psp/telop' or x['name'] not in telop_ko.TELOPS:
+                continue
+            if x['size'] != x['extract']:
+                skipped.append((x['name'], 'compressed'))
+                continue
+            blob = bytearray(inner.read(x))
+            parts = {p['name']: p for p in xpck.parse(bytes(blob))}
+            xi = parts['000.xi']['data']
+            ind, real_h = imgp8.indices(xi)
+            pal = imgp8.palette(xi)
+            found = telop_tex.structure(ind[:real_h], pal)
+            if found is None:
+                skipped.append((x['name'], 'no plate found'))
+                continue
+            title_box, name_box, band = found
+            title, name = telop_ko.TELOPS[x['name']]
+            ok = telop_tex.draw(ind, pal, title_box, title, telop_tex.BOLD)
+            ok &= telop_tex.draw(ind, pal, name_box, name, telop_tex.HEAVY)
+            telop_tex.scrub(ind, pal, band, title_box[0], title_box[2])
+            if not ok:
+                skipped.append((x['name'], 'would not fit'))
+                continue
+            new = menu_tex.encode(xi, ind)
+            if new is None or len(new) != len(xi):
+                skipped.append((x['name'], 'could not be rebuilt'))
+                continue
+            off = parts['000.xi']['offset']
+            blob[off:off + len(new)] = new
+            edits.append((e['offset'] + x['offset'], bytes(blob)))
+            done += 1
     return edits, done, skipped
 
 
@@ -1699,6 +1749,11 @@ def main(dry=False, nofont=False):
     print('menu art: %d labels redrawn' % menu_done)
     if menu_skip:
         print('  could not be rebuilt: %s' % menu_skip[:4])
+    telop_edits, telop_done, telop_skip = patch_telop(c, d)
+    edits += stage('telop', telop_edits)
+    print('character telops: %d plates redrawn' % telop_done)
+    if telop_skip:
+        print('  left in Japanese: %s' % telop_skip[:4])
     movie_edits = patch_movie()
     print('opening movie: %d subtitled .pmf' % len(movie_edits))
     tbl_edits, tbl_done, tbl_skip = patch_table.patch(
