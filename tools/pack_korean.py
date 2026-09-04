@@ -15,6 +15,7 @@ from PIL import Image, ImageFont, ImageDraw
 import cpk, dnsfile, crilayla, pgd, fnt, xpck, imgp, l5enc, aux_fonts
 import extract_lua, extract_flo, imgp8, menu_tex, menu_ko, cfgbin, pgdtool
 import patch_table
+import patch_call
 import build_expand2 as B
 
 SRC = r'D:\psp\타임트레블러즈\Time Travelers.iso'
@@ -78,7 +79,8 @@ DNS_LIMIT = 0
 #   pck  chapter dialogue         cfg  tips, tutorials, help, outlines
 #   flo  time-travel chart        scn  choices
 #   menu menu artwork             lua  menu and system messages
-DNS_STAGES = frozenset(['pck', 'cfg', 'flo', 'scn', 'menu', 'lua', 'table'])
+DNS_STAGES = frozenset(['pck', 'cfg', 'flo', 'scn', 'menu', 'lua', 'table',
+                        'call'])
 # Diagnostic: leave these sheets in Japanese. The two named here are the only
 # ones whose rewritten block comes out of the method-2 encoder, which is the
 # one encoder whose output was never shown to match what the game shipped --
@@ -1705,6 +1707,12 @@ def main(dry=False, nofont=False):
     print('mail/diary/TIPS tables: %d strings' % tbl_done)
     if tbl_skip:
         print('  tables left alone: %s' % tbl_skip[:4])
+    call_edits, call_done, call_skip = patch_call.patch(
+        c, d, table, UI_DIR, recode, fit_crilayla)
+    edits += stage('call', call_edits)
+    print('phone calls: %d lines in psp/ttp/call' % call_done)
+    if call_skip:
+        print('  calls left alone: %s' % call_skip[:4])
     lua_edits, lua_done, lua_skip = patch_lua(c, d, table)
     edits += stage('lua', lua_edits)
     print('menu and system messages: %d strings in psp/script/lua' % lua_done)
