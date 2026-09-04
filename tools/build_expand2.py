@@ -48,7 +48,12 @@ def split_strings(b):
         if not seg.endswith(b'\x00') or seg.count(b'\x00') != count:
             continue
         try:
-            seg.decode('shift_jis')
+            # cp932, not shift_jis: seven blobs carry a circled numeral
+            # (87 40 / 87 41, NEC row 13), which the stricter codec rejects.
+            # The pool was being found and then thrown away, so four scenes of
+            # Rusanchi and one each of Sagishi and Keiji were never extracted
+            # and played in Japanese while the rest of the chapter was Korean.
+            seg.decode('cp932')
         except UnicodeDecodeError:
             continue
         return base, total, seg.split(b'\x00')[:-1]

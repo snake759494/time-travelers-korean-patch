@@ -13,7 +13,7 @@ NAVI = {
     (0, 45, 144, 66): '스크린샷 촬영',
     (149, 45, 180, 67): '확대',
     (185, 45, 218, 66): '재생',
-    (273, 45, 304, 66): '다시 읽기',
+    (273, 45, 304, 66): '재독',      # 31px of quad: '다시 읽기' only fits at 7px
     (6, 69, 75, 91): '모델 회전',
     (82, 69, 151, 90): '도움말 전환',
     (158, 69, 227, 90): '페이지 전환',
@@ -21,7 +21,7 @@ NAVI = {
     (49, 93, 115, 114): '정렬 변경',
     (125, 93, 180, 115): '일시정지',
     (181, 93, 244, 114): '설정 변경',
-    (273, 93, 304, 114): '다시 읽기',
+    (273, 93, 304, 114): '재독',
     (132, 116, 179, 139): '이전 화',
     (180, 117, 228, 138): '다음 화',
     (233, 117, 264, 138): '선택',
@@ -74,41 +74,66 @@ SAVELOAD = {
     (101, 273, 202, 290): '로드 데이터',
 }
 # White lettering on nothing, exactly like the button bar -- the panel's
-# pattern lives on another texture, not behind these.
+# pattern lives on another texture, not behind these. Boxes are the .pvb
+# quads: the chapter labels are set flush to x=255 with their furigana in
+# the last few columns, and boxes stopping at the word left the reading
+# behind as a mark after every '편'.
 SAVELOAD_2 = {
-    (10, 5, 194, 24): '저장할 위치를 선택하세요',
-    (185, 29, 252, 48): '고교생 편',
-    (187, 53, 249, 72): '사기꾼 편',
-    (171, 77, 249, 96): '루상치 편',
-    (204, 101, 249, 120): '형사 편',
-    (168, 125, 249, 144): '캐스터 편',
-    (188, 149, 249, 168): '미코토 편',
-    (152, 173, 252, 188): '불러올 데이터',
-    (125, 189, 249, 208): '타임 트래블러 편',
+    (4, 3, 197, 26): '저장할 위치를 선택하세요',
+    (180, 27, 255, 49): '고교생 편',
+    (180, 51, 255, 73): '사기꾼 편',
+    (169, 75, 255, 97): '루상치 편',
+    (200, 99, 255, 121): '형사 편',
+    (166, 123, 255, 145): '캐스터 편',
+    (185, 147, 255, 169): '미코토 편',
+    (148, 171, 255, 187): '불러올 데이터',
+    (124, 187, 255, 209): '타임 트래블러 편',
 }
 
 # The in-game main menu. Six chapter archives carry it and five of them share
 # the very same texture, so one table covers the lot. The clock values and the
 # option arrows are left where they are; only the wording changes.
+# These are the sprite rectangles themselves, read out of 000.pvb (xpvb) --
+# not boxes measured off the sheet. Measured boxes were wrong in both
+# directions and both mistakes showed on hardware. Two of the explanation
+# lines had been widened to the left so the Korean could be set larger, but
+# a quad is all the game samples: everything outside it simply is not drawn,
+# so 'タイトル画面に戻ります。' lost its first characters. The other way round,
+# the help entry's box was twice its quad -- 88px against 41 -- and centring
+# the Korean in it pushed most of the word past the right edge of what the
+# game shows, leaving one visible syllable.
 MAINMENU = {
-    (41, 335, 180, 350): '타임 트래블 차트',
-    (40, 351, 164, 362): '타임 스톱 리스트',
-    (181, 335, 332, 362): '아방 타이틀＆예고편 목록',
-    (40, 367, 120, 380): 'TIPS 목록',
-    (41, 383, 109, 397): '옵션',   # stops short of the ◀▶ arrows
-    (40, 399, 128, 413): '도움말',
-    (40, 414, 128, 430): '타이틀로 돌아가기',
-    # The heading and the line of explanation that follows the cursor. Two of
-    # the boxes reach further left than the Japanese did: the Korean is longer,
-    # and at the original width it had to drop to 12px while its neighbours
-    # sat at 15. What they grow into is transparent.
-    (351, 313, 460, 326): '메인 메뉴',
-    (334, 345, 508, 364): '게임 도움말을 표시합니다．',
-    (347, 373, 508, 392): '게임 설정을 변경합니다．',
-    (326, 404, 508, 424): '타이틀 화면으로 돌아갑니다．',
-    (299, 433, 508, 452): '타임 스톱 리스트를 표시합니다．',
-    (284, 461, 507, 480): '타임 트래블 차트를 표시합니다．',
-    (344, 485, 508, 504): 'TIPS 목록을 표시합니다．',
+    (37, 332, 182, 348): '타임 트래블 차트',
+    (40, 348, 167, 364): '타임 스톱 리스트',
+    # 181, not the 184 one archive rounds to: the retail katakana starts at
+    # 181 and a tighter box leaves its first three columns behind.
+    (181, 343, 333, 364): '아방 타이틀＆예고편 목록',
+    (40, 364, 121, 379): 'TIPS 목록',
+    (40, 380, 104, 396): '옵션',   # the ◀▶ arrows are quads of their own
+    (40, 396, 81, 412): '도움말',
+    # 41px of quad, so the wording has to be the short one: '타이틀로
+    # 돌아가기' only fits at 10px and dragged the whole column down with it.
+    (40, 412, 131, 432): '타이틀로',
+    # The heading, and the line of explanation that follows the cursor.
+    (348, 308, 464, 329): '메인 메뉴',
+    (333, 344, 512, 368): '게임 도움말을 표시합니다．',
+    (340, 368, 512, 393): '게임 설정을 변경합니다．',
+    (340, 400, 512, 425): '타이틀 화면으로 돌아갑니다．',
+    (297, 432, 512, 457): '타임 스톱 리스트를 표시합니다．',
+    (282, 456, 512, 481): '타임 트래블 차트를 표시합니다．',
+    (350, 480, 512, 505): 'TIPS 목록을 표시합니다．',
+}
+# The chapter name that heads the same menu, on the archive's second sheet.
+# It was never in this file, so 'キャスター編' sat in Japanese over a menu that
+# was otherwise all Korean. Every archive carries all six names; the quads run
+# down the sheet on a 24px pitch, flush to x=84 with the reading above.
+MAINMENU_CHAPTER = {
+    (0, 224, 84, 244): '고교생 편',
+    (0, 248, 84, 268): '사기꾼 편',
+    (0, 272, 84, 292): '루상치 편',
+    (0, 296, 84, 316): '형사 편',
+    (0, 320, 84, 340): '캐스터 편',
+    (0, 344, 84, 364): '미코토 편',
 }
 MAINMENU_ARCHIVES = ['mainmenu_keijihen_big.xa', 'mainmenu_koukouseihen_big.xa',
                      'mainmenu_kyasutahen_big.xa', 'mainmenu_mikotohen_big.xa',
@@ -122,7 +147,7 @@ NOTICE = {
     (4, 153, 430, 176): '스킵 플레이가 꺼졌습니다．',
     (5, 185, 420, 208): '오토 플레이가 꺼졌습니다．',   # clear of the PAUSE badge
     (5, 304, 326, 334): '헤드폰 모드로 설정했습니다．',
-    (418, 315, 474, 334): '힌트',
+    (414, 314, 479, 336): '힌트',   # the quad, not the word: it carries furigana
     (5, 359, 381, 392): '스피커 모드로 설정했습니다．',
     (13, 432, 121, 448): '텍스트 로그',
     (12, 456, 81, 472): '줄거리',
@@ -134,7 +159,7 @@ NOTICE = {
 # English line underneath stays. The plates are coloured, so they are drawn
 # over rather than cleared.
 CHARSEL = {
-    (12, 285, 234, 320): '캐릭터를 선택하세요',
+    (8, 281, 236, 304): '캐릭터를 선택하세요',
 }
 CHARSEL_OVER = [
     (366, 288, 491, 308, '루상치☆맨'),
@@ -239,9 +264,9 @@ CONTROL_B = {
     (49, 411, 100, 434): '조작 설명',
     (114, 413, 266, 433): 'R 버튼＋방향키(상하)',
     (324, 429, 372, 441): '× 버튼',
-    (114, 439, 241, 457): '슬라이더를 드래그',
+    (112, 440, 296, 456): '슬라이더를 드래그',
     (2, 446, 92, 466): '방향키(상하)',
-    (114, 459, 215, 477): '커서를 터치',
+    (112, 460, 219, 476): '커서를 터치',
     (2, 474, 92, 494): '방향키(좌우)',
     (126, 479, 190, 496): '터치',
 }
@@ -272,7 +297,7 @@ SPRITES = {'navi.xa': {'000.xi': NAVI},
            'control_c.xa': {'000.xi': CONTROL_C},
            'tutorial.xa': {'000.xi': TUTORIAL}}
 for _a in MAINMENU_ARCHIVES:
-    SPRITES[_a] = {'000.xi': MAINMENU}
+    SPRITES[_a] = {'000.xi': MAINMENU, '001.xi': MAINMENU_CHAPTER}
 OVER = {'title_new.xa': {'001.xi': (TITLE, 40)},
         'chara_sellect.xa': {'000.xi': (CHARSEL_OVER, 0)},
         'tutorial.xa': {'000.xi': (TUTORIAL_OVER, 0)}}

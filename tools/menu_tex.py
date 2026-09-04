@@ -28,23 +28,28 @@ def font(size):
 def ramp(pal, ind, box):
     """The alpha ramp this label is drawn with, as (alpha, index) pairs."""
     x0, y0, x1, y1 = box
-    used = np.unique(ind[y0:y1, x0:x1])
+    used, count = np.unique(ind[y0:y1, x0:x1], return_counts=True)
     rgb = {}
-    for i in used:
-        r, g, b, a = pal[i]
+    for i, n in zip(used, count):
+        r, g, b, a = pal[int(i)]
         if a:
-            rgb.setdefault((r, g, b), []).append((a, int(i)))
+            rgb.setdefault((r, g, b), []).append((int(a), int(i), int(n)))
     if not rgb:
         return None
-    # The lettering, not the backdrop: take the family holding the brightest
-    # opaque colour in the box. Picking the largest family instead worked
-    # where the background was transparent, but on the menu strip the dark
-    # backdrop outnumbers the white text and the labels came out unreadable.
-    def peak(entries):
-        a, i = max(entries)
-        return (a > 200, sum(pal[i][:3]))
-    best = max(rgb.values(), key=peak)
-    return sorted(best)
+    # The lettering, not the backdrop. Taking the family with the brightest
+    # opaque colour picked a stray highlight out of the artwork behind the
+    # main menu's description lines -- a colour the sheet held one pixel of --
+    # and redrew them in a grey that was not theirs. Take the family covering
+    # the most of the box instead: on all but one of these quads the backdrop
+    # is transparent, so it is not in the running, and where it is opaque it
+    # gives itself away by filling half the box, which no word does.
+    fill = int(used[count.argmax()])
+    area = (y1 - y0) * (x1 - x0)
+    word = [v for v in rgb.values()
+            if not (sum(n for _, _, n in v) * 2 > area
+                    and any(i == fill for _, i, _ in v))]
+    best = max(word or list(rgb.values()), key=lambda v: sum(n for _, _, n in v))
+    return sorted((a, i) for a, i, _ in best)
 
 
 def clip(ind, box):
@@ -74,34 +79,169 @@ def around(ind, box, band=2):
     return vals[freq.argmax()]
 
 
-def draw(ind, pal, box, text, pad=1):
-    """Clear the rectangle and centre `text` in it."""
+def label_ink(ind, pal, box, ramp_=None):
+    """Where the retail lettering actually sits inside `box`.
+
+    A quad is bigger than the word on it: it carries the furigana, and on a
+    menu list it runs on over empty strip past the end of a short label.
+    Spreading the Korean across the whole quad therefore put it where the
+    Japanese never was -- the main menu's help entry started a quarter of
+    the way along its row and its lower half disappeared under the row
+    below -- so the drawing is kept inside the rectangle the retail
+    lettering occupied, which is by definition a place the game shows.
+    """
+    ramp_ = ramp_ or ramp(pal, ind, box)
+    if not ramp_:
+        return None
+    sel = np.zeros(256, bool)
+    for _, i in ramp_:
+        sel[i] = True
+    sub = sel[ind[box[1]:box[3], box[0]:box[2]].astype(np.uint8)]
+    xs, ys = np.where(sub.any(0))[0], np.where(sub.any(1))[0]
+    if not len(xs) or not len(ys):
+        return None
+    return (box[0] + int(xs[0]), box[1] + int(ys[0]),
+            box[0] + int(xs[-1]) + 1, box[1] + int(ys[-1]) + 1)
+
+
+def _render(text, size, w, h):
+    """`text` at `size`, as (coverage image, its bounding box)."""
+    pane = (max(w, size) * 4, max(h, size) * 4)
+    tmp = Image.new('L', pane, 0)
+    ImageDraw.Draw(tmp).text((pane[0] // 2, pane[1] // 2), text, font=font(size),
+                             fill=255, anchor='mm')
+    return tmp, tmp.getbbox()
+
+
+def plan(ind, pal, box, text, pad=1):
+    """What drawing `text` into `box` would need, or None if it cannot.
+
+    `size` is the biggest that fits; a caller that is drawing a whole column
+    lowers it to the one the column shares.
+    """
     box = clip(ind, box)
-    x0, y0, x1, y1 = box
-    if x1 - x0 < 6 or y1 - y0 < 6:
-        return False
+    if box[2] - box[0] < 6 or box[3] - box[1] < 6 or not text:
+        return None
     ramp_ = ramp(pal, ind, box)
-    if not ramp_ or not text:
-        return False
-    w, h = x1 - x0, y1 - y0
-    # largest size whose ink fits the box
+    if not ramp_:
+        return None
+    ink = label_ink(ind, pal, box, ramp_) or box
+    left, right = ink[0] - box[0], box[2] - ink[2]
+    align = 'left' if left < right - 3 else 'right' if right < left - 3 else 'mid'
+    # The retail ink says where the label is anchored, not how big it may be:
+    # the quad keeps a few rows of slack under the lettering and Hangul needs
+    # them, since a syllable with a final consonant runs lower than the kana
+    # it replaces. So measure from the anchor to the far side of the quad.
+    w = {'left': box[2] - ink[0], 'right': ink[2] - box[0]}.get(
+        align, box[2] - box[0])
+    # Vertically the quad is only a ceiling. Filling it makes the Korean
+    # bigger than the Japanese ever was -- the main menu's heading sits 13
+    # rows deep in a quad 21 rows tall -- so stay near the retail lettering
+    # and keep a few rows for the final consonants kana do not have.
+    h = min(box[3] - box[1], ink[3] - ink[1] + 4)
     for size in range(h, 5, -1):
-        f = font(size)
-        tmp = Image.new('L', (w * 4, h * 4), 0)
-        ImageDraw.Draw(tmp).text((w * 2, h * 2), text, font=f, fill=255,
-                                 anchor='mm')
-        bb = tmp.getbbox()
+        bb = _render(text, size, w, h)[1]
         if bb and bb[2] - bb[0] <= w - pad and bb[3] - bb[1] <= h - pad:
             break
     else:
+        return None
+    return {'box': box, 'ink': ink, 'ramp': ramp_, 'text': text,
+            'size': size, 'align': align, 'pad': pad}
+
+
+def draw_all(ind, pal, items, pad=1):
+    """Draw every (box, text), with one size shared down each column.
+
+    The retail sheet sets a whole menu column in one size. Sizing each label
+    to its own quad instead stepped the main menu from 15px at the top to
+    10px at the bottom, which is what the column looked wrong for.
+    """
+    plans = [p for p in (plan(ind, pal, b, t, pad) for b, t in items) if p]
+    # Labels lined up on a common edge belong to the same column. A label
+    # can share its left edge with one run and its right edge with another --
+    # the menu rows are flush left and two of them happen to end together --
+    # so it joins whichever run is longer.
+    for edge, key in ((0, 'l'), (2, 'r')):
+        run = []
+        for p in sorted(plans, key=lambda q: q['box'][edge]):
+            if run and p['box'][edge] - run[0]['box'][edge] <= 5:
+                run.append(p)
+            else:
+                run = [p]
+            p[key] = run
+    done = 0
+    for p in plans:
+        col = p['l'] if len(p['l']) >= len(p['r']) else p['r']
+        if _paint(ind, p, min(p['size'], _shared(col)), _edge(col) or p['align']):
+            done += 1
+    return done
+
+
+def _shared(col):
+    """The size a column settles on.
+
+    Plainly the smallest that every label can reach -- except that one label
+    too long for its quad should not take the column with it. The button bar
+    has a 31px quad holding two kanji, and the four words beside it dropped
+    from 16px to 7px to keep it company. A label that far off the pace is
+    left at its own size instead.
+    """
+    sizes = sorted(q['size'] for q in col)
+    mid = sizes[len(sizes) // 2]
+    return min([s for s in sizes if s * 4 >= mid * 3] or sizes)
+
+
+def _edge(col):
+    """Which side a column of labels is set from, if it is set from one.
+
+    A label whose word fills its quad says nothing on its own about where
+    the line begins, and centring the shorter Korean in it left the main
+    menu ragged where the Japanese had been flush. A column gives the
+    answer the label cannot: the side its words line up on.
+    """
+    if len(col) < 3:
+        return None
+    lo = max(p['ink'][0] for p in col) - min(p['ink'][0] for p in col)
+    hi = max(p['ink'][2] for p in col) - min(p['ink'][2] for p in col)
+    # One side flush and the other plainly not. Where the words fill their
+    # quads neither side is flush by choice and there is nothing to read off,
+    # so leave those labels centred where the Japanese was.
+    if min(lo, hi) > 4 or max(lo, hi) < 8:
+        return None
+    return 'left' if lo < hi else 'right'
+
+
+def draw(ind, pal, box, text, pad=1):
+    """Clear the rectangle and set `text` where the retail label was."""
+    p = plan(ind, pal, box, text, pad)
+    return bool(p) and _paint(ind, p, p['size'])
+
+
+def _paint(ind, p, size, align=None):
+    box, ink, ramp_ = p['box'], p['ink'], p['ramp']
+    x0, y0, x1, y1 = box
+    tmp, bb = _render(p['text'], size, x1 - x0, y1 - y0)
+    if not bb:
         return False
     cov = np.asarray(tmp.crop((bb[0], bb[1], bb[2], bb[3])), np.uint8)
     ch, cw = cov.shape
-    ox, oy = x0 + (w - cw) // 2, y0 + (h - ch) // 2
+    oy = (ink[1] + ink[3] - ch) // 2
+    align = align or p['align']
+    if align == 'left':
+        ox = ink[0]
+    elif align == 'right':
+        ox = ink[2] - cw
+    else:
+        ox = (box[0] + box[2] - cw) // 2
+    ox = max(x0, min(ox, x1 - cw))
+    oy = max(y0, min(oy, y1 - ch))
 
     alphas = np.array([a for a, _ in ramp_], np.int16)
     idxs = np.array([i for _, i in ramp_], np.uint8)
     top = alphas.max()
+    # The whole quad, not just the word: the furigana above a label is a
+    # colour family of its own, so wiping only the lettering's own ink left
+    # a row of tiny kana over half the operation guide.
     # Clear to whatever this box's background actually is. Index 0 is the
     # transparent one in the button bar but not everywhere -- on the save
     # screen it is opaque, and clearing to it drew a dark block behind

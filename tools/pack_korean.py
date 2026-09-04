@@ -547,9 +547,7 @@ def patch_menu(c, d):
             pal = imgp8.palette(xi)
             for mode, spec in todo:
                 if mode == 'clear':
-                    for box, text in spec.items():
-                        if menu_tex.draw(ind, pal, box, text):
-                            hit += 1
+                    hit += menu_tex.draw_all(ind, pal, spec.items())
                 else:
                     boxes, bg = spec
                     for x0, y0, x1, y1, text in boxes:
