@@ -58,8 +58,10 @@ need['character label'] = sub(lambda t: t.endswith('의 경우'))
 ROUTE = {'eboot.json': 'telop_main.xf', 'lua.json': 'telop_main.xf',
          'staffroll.json': 'staffroll.xf', 'tip.json': 'ttp_main.xf',
          'tutorial.json': 'ttp_main.xf', 'help.json': 'ttp_main.xf',
-         'outline.json': 'ttp_main.xf', 'flo.json': 'telop_main.xf',
-         'choice.json': 'nrm_sub.xf', 'dialogue': 'nrm_sub.xf',
+         'outline.json': 'ttp_main.xf', 'table.json': 'ttp_main.xf',
+         'flo.json': 'telop_main.xf',
+         'choice.json': 'nrm_sub.xf', 'call.json': 'nrm_sub.xf',
+         'dialogue': 'nrm_sub.xf',
          'chapter name': 'telop_player.xf',
          'character label': 'telop_sp.xf'}
 bad = 0

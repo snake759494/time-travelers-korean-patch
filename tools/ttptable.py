@@ -1,16 +1,32 @@
 # -*- coding: utf-8 -*-
-"""TTP_MAIL / TTP_DIAR / TTP_TIPS tables: an offset table over a string pool.
+"""TTP_MAIL / TTP_DIAR / TTP_TIPS tables: offset arrays over a string pool.
 
-Header is magic(8) + count(4) + table offset(4). The table is a run of 32-bit
-offsets into a pool of NUL-terminated strings that follows it.
+Header is magic(8) + count(4) + table offset(4), then a run of fixed-size
+records. A record does not hold its text; it holds offsets, and some of those
+offsets point at *further arrays* of offsets rather than at words. Only past
+all of that does the pool of NUL-terminated strings begin.
 
-Rebuilding the pool from scratch does not work: it carries alignment padding
-and bytes nothing points at, so a rebuilt pool never reproduces the original
-byte for byte. Instead the file is kept whole and each replacement string is
-*appended* past the end, with only its offset slots repointed. The no-op case
-is then identical by construction, every unreferenced byte stays where it was,
-and a replacement may be any length. The file grows; the caller compresses it
-back into its slot as usual.
+That indirection is what the first parser here missed. It took the pool to
+start at the lowest offset the record table names, which in mail.bin is 5680 --
+the array, not the pool -- and then read that array's 32-bit entries as though
+they were text. Each one decoded as a stray kanji, so the extraction produced
+440 entries reading 襷, 祗, 侵, 単 and nothing worth translating, and the mail
+and diary went untranslated on the grounds that there was nothing there. There
+are 1,329 strings.
+
+The pool is found the way ttpcall finds its own: take every 4-byte-aligned word
+as a candidate start and keep the first where the rest of the file reads as a
+run of NUL-terminated CP932 strings *and every one of those strings is pointed
+at*. A wrong guess breaks one of the two -- an array's entries do not decode as
+a clean run of strings, and a start inside the pool leaves the strings above it
+referenced by nothing. On the retail disc this lands the pool in all three
+tables, 820 + 504 + 6 strings, and each rebuilds byte for byte untouched.
+
+Replacements go in place when they fit and are appended past the end when they
+do not, with only those slots repointed. The Japanese carries ruby the Korean
+does not need, so nearly all of them fit and the file barely grows -- which
+matters, because these tables are compressed into slots with about 3% of room
+to spare.
 """
 import struct
 
@@ -19,46 +35,54 @@ HDR = 16
 MAX_STR = 400
 
 
-def _starts(data):
-    """Offsets at which a NUL-terminated string begins."""
-    out, i, n = set(), 0, len(data)
+def _pool(data, start):
+    """String starts in [start, end), or None if that is not what it holds."""
+    out, i, n = [], start, len(data)
     while i < n:
         j = data.find(b'\x00', i)
         if j < 0:
-            break
-        if 1 <= j - i <= MAX_STR and i >= HDR:
-            out.add(i)
+            return None
+        if j == i:                       # padding, and only at the very end
+            return out if not data[i:].strip(b'\x00') else None
+        if j - i > MAX_STR:
+            return None
+        try:
+            data[i:j].decode('cp932')
+        except UnicodeDecodeError:
+            return None
+        out.append(i)
         i = j + 1
-    return out
+    return out or None
 
 
 class Table(object):
-    def __init__(self, data, slots, pool):
+    def __init__(self, data, pool, starts, refs):
         self.data = data
-        self.slots = slots          # [(table_offset, string_offset)]
         self.pool = pool
+        self.starts = starts             # string offsets, in file order
+        self.refs = refs                 # {string offset: [slot offset]}
 
     def strings(self):
-        """[(string_offset, raw)] for each distinct string, in pool order."""
-        out, seen = [], set()
-        for _, so in self.slots:
-            if so in seen:
-                continue
-            seen.add(so)
-            out.append((so, self.data[so:self.data.find(b'\x00', so)]))
-        out.sort()
-        return out
+        """[(string_offset, raw)] for each string in the pool."""
+        return [(s, self.data[s:self.data.find(b'\x00', s)])
+                for s in self.starts]
 
     def pack(self, replace):
-        """The file with {string_offset: new_raw} applied, appended at the end."""
+        """The file with {string_offset: new_raw} applied."""
         out = bytearray(self.data)
-        moved = {}
+        tail = {}
         for so in sorted(replace):
-            moved[so] = len(out)
-            out += replace[so] + b'\x00'
-        for to, so in self.slots:
-            if so in moved:
-                struct.pack_into('<I', out, to, moved[so])
+            new = replace[so]
+            room = self.data.find(b'\x00', so) - so
+            if len(new) <= room:
+                out[so:so + room + 1] = new + b'\x00' * (room - len(new) + 1)
+            else:
+                tail[so] = new
+        for so in sorted(tail):
+            at = len(out)
+            out += tail[so] + b'\x00'
+            for slot in self.refs[so]:
+                struct.pack_into('<I', out, slot, at)
         return bytes(out)
 
 
@@ -66,33 +90,13 @@ def parse(data):
     """A Table for `data`, or None if it does not look like one of these."""
     if data[:4] != MAGIC or len(data) < HDR:
         return None
-    table_off = struct.unpack('<I', data[12:16])[0]
-    if not HDR <= table_off < len(data) - 4:
-        return None
-    starts = _starts(data)
-    if not starts:
-        return None
-    # The pool begins at the lowest offset the table names, and the table
-    # cannot reach past it. Converge on that, then keep only the slots that
-    # point into the pool.
-    pool = len(data)
-    for _ in range(8):
-        low = pool
-        for off in range(table_off, min(pool, len(data) - 4), 4):
-            v = struct.unpack('<I', data[off:off + 4])[0]
-            if v > off and v in starts:
-                low = min(low, v)
-        if low == pool:
-            break
-        pool = low
-    if pool <= table_off or pool >= len(data):
-        return None
-    slots = []
-    for off in range(table_off, min(pool, len(data) - 4), 4):
+    refs = {}
+    for off in range(0, len(data) - 3, 4):
         v = struct.unpack('<I', data[off:off + 4])[0]
-        if v >= pool and v in starts:
-            slots.append((off, v))
-    if not slots:
-        return None
-    t = Table(data, slots, pool)
-    return t if t.pack({}) == data else None
+        if HDR < v < len(data):
+            refs.setdefault(v, []).append(off)
+    for start in sorted(refs):
+        starts = _pool(data, start)
+        if starts and all(s in refs for s in starts):
+            return Table(data, start, starts, refs)
+    return None
