@@ -416,3 +416,67 @@ def _fit(raw, orig, room):
         return None
     same = [x for x in out if (x[0] & 7) == (orig[0] & 7)]
     return min(same or out, key=len)
+
+
+def draw_notice(ind, pal, items, pad=2):
+    """The notices shown before the title: centred lines, one size, flat page.
+
+    These two screens are not menu art. Each is a whole page of one colour --
+    the piracy warning is white on black, the autosave notice black on white --
+    with the body set in centred lines and a reading in kana over each of them.
+
+    ramp() is the wrong tool here. It reads a label's colour from the colours
+    inside its box, which is right where a label sits on artwork, but on a flat
+    page the commonest colour after the page itself is the near-white of the
+    page's own anti-aliasing. Two lines of the autosave notice came out drawn
+    in (254, 254, 254) on (255, 255, 255) -- present, and invisible. So the ink
+    here is taken as the opaque colour furthest from the page in luminance, and
+    the shades between the two are matched back to the palette.
+
+    One size for the block, and centred: the retail lines are, and sizing each
+    line to its own box stepped them.
+    """
+    p = np.array(pal, np.int16)
+    lum = p[:, :3].sum(1)
+    opaque = np.nonzero(p[:, 3] > 128)[0]
+    out = 0
+    plans = []
+    for box, text in items:
+        box = clip(ind, box)
+        if box[2] - box[0] < 8 or box[3] - box[1] < 8 or not text:
+            continue
+        area = ind[box[1]:box[3], box[0]:box[2]]
+        vals, freq = np.unique(area, return_counts=True)
+        page = int(vals[freq.argmax()])
+        ink = int(opaque[np.abs(lum[opaque] - lum[page]).argmax()])
+        h = box[3] - box[1]
+        for size in range(h, 5, -1):
+            bb = _render(text, size, box[2] - box[0], h)[1]
+            if bb and bb[2] - bb[0] <= box[2] - box[0] - pad \
+                    and bb[3] - bb[1] <= h - pad:
+                break
+        else:
+            continue
+        plans.append((box, text, page, ink, size))
+    if not plans:
+        return 0
+    size = min(q[4] for q in plans)
+    for box, text, page, ink, _ in plans:
+        x0, y0, x1, y1 = box
+        tmp, bb = _render(text, size, x1 - x0, y1 - y0)
+        if not bb:
+            continue
+        cov = np.asarray(tmp.crop(bb), np.float32) / 255.0
+        ch, cw = cov.shape
+        oy, ox = y0 + (y1 - y0 - ch) // 2, x0 + (x1 - x0 - cw) // 2
+        ind[y0:y1, x0:x1] = page
+        want = (p[page][:3].astype(np.float32)
+                + (p[ink][:3] - p[page][:3]).astype(np.float32)
+                * cov[:, :, None])
+        d = ((p[opaque][None, None, :, :3].astype(np.float32)
+              - want[:, :, None, :]) ** 2).sum(3)
+        pick = opaque[d.argmin(2)].astype(np.uint8)
+        area = ind[oy:oy + ch, ox:ox + cw]
+        area[:] = np.where(cov > 0.02, pick, area)
+        out += 1
+    return out

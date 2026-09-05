@@ -81,7 +81,7 @@ DNS_LIMIT = 0
 #   flo  time-travel chart        scn  choices
 #   menu menu artwork             lua  menu and system messages
 DNS_STAGES = frozenset(['pck', 'cfg', 'flo', 'scn', 'menu', 'lua', 'table',
-                        'call', 'telop'])
+                        'call', 'telop', 'notice'])
 # Diagnostic: leave these sheets in Japanese. The two named here are the only
 # ones whose rewritten block comes out of the method-2 encoder, which is the
 # one encoder whose output was never shown to match what the game shipped --
@@ -240,15 +240,25 @@ def patch_cfg(c, d, ui, table):
                     rebuilt[j] = new[i]
                 cur += len(s) + 1
             cand = cfg.pack(rebuilt)
-            # A rebuilt file may only shrink. staffroll_ja.cfg.bin comes out
-            # 1008 bytes longer than it shipped, and the reader has already
-            # sized its buffer from the original; keeping each string in the
-            # slot it had, trimmed, is the safe answer even though it costs
-            # the tail of the longest lines.
-            if len(cand) <= len(data):
-                blob = cand
-            else:
-                print('  %s would grow %d bytes; kept in its own slots'
+            # A rebuilt file may grow. This used to be refused on the grounds
+            # that the reader had already sized its buffer from the original,
+            # and the cost was the staff roll: 874 characters chopped off the
+            # ends of its lines, because a Japanese name written in Hangul is
+            # simply longer than the kanji -- 込山 拓哉 is nine bytes and
+            # 코미야마 타쿠야 is fifteen. Removing every space in the file
+            # still leaves it 360 bytes over, so there is no way to fit it.
+            #
+            # There is no size for a reader to get wrong, though. The header
+            # carries the string table's offset, its length and its count, and
+            # pack() rewrites all three; the CPK row carries the compressed and
+            # extract sizes, and both are updated below. The Lua asks for a
+            # line by index (staffRollGetText) and is handed a string, so it
+            # holds no buffer of its own either. Exactly one file on the disc
+            # takes this path -- staffroll_ja.cfg.bin, 29888 -> 30896 -- so
+            # what it risks is that one screen.
+            blob = cand
+            if len(cand) > len(data):
+                print('  %s grew %d bytes; repacked with its own offsets'
                       % (e['name'], len(cand) - len(data)))
         if blob is None:
             for i in range(len(new)):
@@ -629,6 +639,41 @@ def patch_telop(c, d):
             blob[off:off + len(new)] = new
             edits.append((e['offset'] + x['offset'], bytes(blob)))
             done += 1
+    return edits, done, skipped
+
+
+def patch_outer_menu():
+    """Redraw the two notices the game shows before the title.
+
+    They sit in the outer CPK, not in the DNS stream the rest of the menus
+    live in, so they are written straight into the ISO the way the outer
+    fonts are. Each is one flat page of text, so it is drawn with
+    draw_notice rather than the label painter -- see there for why.
+    """
+    outer = cpk.CPK(SRC, base=CPK_LBA * SEC)
+    edits, done, skipped = [], 0, []
+    for name, sheets in menu_ko.OUTER_SPRITES.items():
+        e = [x for x in outer.files if x['name'] == name]
+        if not e:
+            skipped.append((name, 'not on the disc'))
+            continue
+        e = e[0]
+        parts = {p['name']: p for p in xpck.parse(outer.read(e))}
+        for xi_name, table in sheets.items():
+            xi = parts[xi_name]['data']
+            ind, _ = imgp8.indices(xi)
+            pal = imgp8.palette(xi)
+            hit = menu_tex.draw_notice(
+                ind, pal, sorted(table.items(), key=lambda t: t[0][1]))
+            if hit != len(table):
+                skipped.append((name, '%d of %d lines' % (hit, len(table))))
+            new = menu_tex.encode(xi, ind)
+            if new is None or len(new) != len(xi):
+                skipped.append((name, 'could not be rebuilt'))
+                continue
+            off = e['offset'] + parts[xi_name]['offset']
+            edits.append((CPK_LBA * SEC + off, new))
+            done += hit
     return edits, done, skipped
 
 
@@ -1788,6 +1833,11 @@ def main(dry=False, nofont=False):
     # ---- fonts ----
     # Every dialogue font gets the same syllables drawn into its own slots.
     font_edits = []
+    notice_edits, notice_done, notice_skip = patch_outer_menu()
+    font_edits += stage('notice', notice_edits)
+    print('warning screens: %d lines redrawn' % notice_done)
+    if notice_skip:
+        print('  left in Japanese: %s' % notice_skip[:4])
     if SKIP_FONTS:
         print('  fonts left exactly as they shipped (diagnostic)')
     for name, F in ({} if nofont or SKIP_FONTS else fonts).items():

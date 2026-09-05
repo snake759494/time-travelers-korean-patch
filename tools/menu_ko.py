@@ -294,7 +294,58 @@ CONTROL_C = {
     (2, 474, 92, 494): '방향키(좌우)',
 }
 
+# The options screen. Every rectangle here is a quad the archive's own vertex
+# buffer names; the ones left out are the slider bars, the arrows, the dotted
+# decoration and the pale English OPTION behind the panel, which are not text.
+# ON and OFF are already Latin and stay as they are.
+OPTIONMENU = {
+    (481, 227, 513, 249): '전체',
+    (481, 250, 512, 274): '없음',
+    (0, 337, 84, 351): '헤드폰',
+    (2, 352, 67, 375): '읽은 것만',
+    (244, 354, 385, 371): '데이터 인스톨',
+    (388, 354, 449, 371): '사운드',
+    (305, 384, 394, 401): '옵션',
+    (396, 387, 472, 402): '스피커',
+    (344, 414, 415, 438): '설정 완료',
+    (420, 416, 498, 438): '대사 표시',
+    (95, 421, 233, 438): '메시지 스킵',
+    (0, 422, 94, 438): '오토 세이브',
+    (332, 440, 509, 460): '사운드 환경을 설정합니다.',
+    (4, 441, 272, 461): '설정을 반영하고 메인 메뉴로 돌아갑니다.',
+    (4, 464, 247, 484): '메시지 스킵 기능을 설정합니다.',
+    (264, 464, 509, 484): '인스톨 데이터의 사용을 설정합니다.',
+    (4, 488, 276, 508): '오토 세이브 기능의 ON/OFF를 설정합니다.',
+    (280, 488, 501, 508): '대사의 표시／비표시를 설정합니다.',
+}
+
+# The two notices the game shows before the title. They are not in the DNS
+# stream with the rest of the menus but in the outer CPK, so they are written
+# straight into the ISO -- see patch_outer_menu.
+#
+# The retail lines carry furigana on a row of their own. Korean has no use for
+# it, so each box here spans the reading row and the line under it, and runs
+# the width of the screen: the text is centred, and giving it only the width
+# the Japanese happened to occupy would have held the Korean to the shorter of
+# the two. The WARNING and CAUTION headings are Latin and stay.
+CAUTION = {
+    (20, 110, 460, 134): '게임 소프트웨어를 권리자의 허락 없이,',
+    (20, 137, 460, 160): '인터넷을 통해 배포 및 유포하는 행위,',
+    (20, 163, 460, 187): '또한, 불법 인터넷 배포임을 알면서',
+    (20, 189, 460, 213): '내려받는 행위는, 법률로 굳게 금지되어 있습니다.',
+    (20, 216, 460, 239): '여러분의 이해와 협력을 부탁드립니다.',
+}
+AUTOSAVE_CAUTION = {
+    (20, 117, 460, 141): '본 게임은 오토 세이브 기능을 지원합니다.',
+    (20, 146, 460, 169): '오토 세이브 중에는 메모리 스틱™ 액세스 램프가',
+    (20, 173, 460, 197): '깜박이므로, 그동안 기록 미디어를 빼거나,',
+    (20, 200, 460, 224): '본체의 전원을 끄지 마십시오.',
+}
+OUTER_SPRITES = {'caution.xa': {'000.xi': CAUTION},
+                 'autosave_caution.xa': {'000.xi': AUTOSAVE_CAUTION}}
+
 SPRITES = {'navi.xa': {'000.xi': NAVI},
+           'optionmenu.xa': {'000.xi': OPTIONMENU},
            'chara_sellect.xa': {'000.xi': CHARSEL},
            'saveloadmenu.xa': {'000.xi': SAVELOAD, '001.xi': SAVELOAD_2},
            'text_outline_chara.xa': {'000.xi': NOTICE},
