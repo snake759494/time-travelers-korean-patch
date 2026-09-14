@@ -19,7 +19,7 @@ byte for byte and byte-aligns each frame to its original offset, so the
 arrival clock and the presentation clock stay the distance apart the disc
 shipped with. Written to MOVIE_DIR for pack_korean to drop into the ISO.
 
-The hardware requirements above are from snake7594/vc2-korean-patch, which
+The hardware requirements above are from snake759494/vc2-korean-patch, which
 established them against a real PSP for Valkyria Chronicles 2. An x264 stream
 without them plays in PPSSPP and is refused by the console.
 """

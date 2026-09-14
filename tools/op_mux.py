@@ -20,7 +20,7 @@ rejects them. The aligned stream is exactly the original's length, so it drops
 straight into the original payload slots and every PES header still describes
 what follows it.
 
-Approach and the buffer-model reasoning follow snake7594/vc2-korean-patch,
+Approach and the buffer-model reasoning follow snake759494/vc2-korean-patch,
 which worked this out on real hardware for Valkyria Chronicles 2.
 """
 import struct

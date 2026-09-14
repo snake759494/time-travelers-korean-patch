@@ -219,8 +219,8 @@ xdelta를 만든 뒤 반드시 적용해서 결과물 해시가 일치하는지 
 
 ## 6. 참고한 선행 작업
 
-동영상 부분은 [snake7594/vc2-korean-patch](https://github.com/snake7594/vc2-korean-patch)
-(『전장의 발큐리아 2』 한글 패치)의 접근을 참조했습니다. 특히 다음이 결정적이었습니다.
+동영상 부분은 같은 제작자의 `vc2-korean-patch`(『전장의 발큐리아 2』 한글 패치,
+GitHub `snake759494` 계정으로 이전 중)의 접근을 참조했습니다. 특히 다음이 결정적이었습니다.
 
 * x264 스트림을 실기 미디어 엔진이 받아들이게 하는 조건 — Main@2.1, B프레임 없음,
   참조 1장, weightp 없음, AUD + SPS/PPS 반복, HRD VUI + pic_timing SEI, filler NAL 금지
