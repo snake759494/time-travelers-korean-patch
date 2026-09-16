@@ -81,7 +81,15 @@ DNS_LIMIT = 0
 #   flo  time-travel chart        scn  choices
 #   menu menu artwork             lua  menu and system messages
 DNS_STAGES = frozenset(['pck', 'cfg', 'flo', 'scn', 'menu', 'lua', 'table',
-                        'call', 'telop', 'notice'])
+                        'call', 'telop'])
+# 'notice' -- the two boot screens (caution.xa, autosave_caution.xa) -- is
+# off. It is the other mechanism v1.9 introduced and v1.9 does not boot on a
+# PSP-3000: those two textures live in the outer CPK and are the first thing
+# the console draws, so they are exactly where a fault would stop the machine
+# before the title. Their blocks pass every static check (alignment, method,
+# encoder variant all match sheets that run on hardware), so this is not a
+# diagnosis, only the shipped state restored until a build with this stage
+# alone has been seen to boot. Add 'notice' here to try it.
 # Diagnostic: leave these sheets in Japanese. The two named here are the only
 # ones whose rewritten block comes out of the method-2 encoder, which is the
 # one encoder whose output was never shown to match what the game shipped --
@@ -240,25 +248,25 @@ def patch_cfg(c, d, ui, table):
                     rebuilt[j] = new[i]
                 cur += len(s) + 1
             cand = cfg.pack(rebuilt)
-            # A rebuilt file may grow. This used to be refused on the grounds
-            # that the reader had already sized its buffer from the original,
-            # and the cost was the staff roll: 874 characters chopped off the
-            # ends of its lines, because a Japanese name written in Hangul is
-            # simply longer than the kanji -- 込山 拓哉 is nine bytes and
-            # 코미야마 타쿠야 is fifteen. Removing every space in the file
-            # still leaves it 360 bytes over, so there is no way to fit it.
-            #
-            # There is no size for a reader to get wrong, though. The header
-            # carries the string table's offset, its length and its count, and
-            # pack() rewrites all three; the CPK row carries the compressed and
-            # extract sizes, and both are updated below. The Lua asks for a
-            # line by index (staffRollGetText) and is handed a string, so it
-            # holds no buffer of its own either. Exactly one file on the disc
-            # takes this path -- staffroll_ja.cfg.bin, 29888 -> 30896 -- so
-            # what it risks is that one screen.
-            blob = cand
-            if len(cand) > len(data):
-                print('  %s grew %d bytes; repacked with its own offsets'
+            # A rebuilt file may only shrink. v1.9 let staffroll_ja.cfg.bin
+            # grow (29888 -> 30896) on the reasoning that nothing could get
+            # the size wrong -- the header carries the string table's offset,
+            # length and count and pack() rewrites all three, the CPK row
+            # carries both sizes and both were updated, and the Lua takes
+            # lines by index. v1.9 does not boot on a PSP-3000. v1.8, the same
+            # disc without this growth and without the two boot notices, does.
+            # Nothing in the static checks (block alignment, compression
+            # method, CRILAYLA shape, encoder variant) tells the two apart, so
+            # both untested mechanisms go back to the shipped state, and the
+            # cost is the one this rule always had: the tails of the longest
+            # staff-roll lines, since a Japanese name written in Hangul is
+            # longer than the kanji (込山 拓哉 is nine bytes, 코미야마 타쿠야
+            # fifteen) and removing every space still leaves the file 360
+            # bytes over. verify_hw.py refuses any .cfg.bin that grew.
+            if len(cand) <= len(data):
+                blob = cand
+            else:
+                print('  %s would grow %d bytes; kept in its own slots'
                       % (e['name'], len(cand) - len(data)))
         if blob is None:
             for i in range(len(new)):
@@ -2027,9 +2035,14 @@ def main(dry=False, nofont=False):
         print('  left in Japanese: %s' % eboot_over[:5])
 
     out = DST_NOFONT if nofont else DST
-    if not os.path.exists(out):
-        print('copying ISO ...')
-        shutil.copyfile(SRC, out)
+    # Always start from the retail disc. Patching whatever ISO was already
+    # there kept every edit of every earlier build that this build no longer
+    # made: the v1.10 build had the boot-notice stage off and still shipped
+    # v1.9's rewritten notices, because they were sitting in the old output
+    # and nothing overwrote them. verify_hw.py caught it; this makes a build
+    # a function of the sources alone.
+    print('copying ISO ...')
+    shutil.copyfile(SRC, out)
     f = open(out, 'r+b')
     base_off = DNS_LBA * SEC
     f.seek(base_off)

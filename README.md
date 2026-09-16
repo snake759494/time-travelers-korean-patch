@@ -12,7 +12,7 @@
 | 항목 | 내용 |
 |---|---|
 | 원본 ISO | `Time Travelers.iso` — 아래 해시와 **정확히 일치**해야 합니다 |
-| 패치 파일 | `TimeTravelers_KR_v1.9.xdelta` ([릴리스](https://github.com/snake759494/time-travelers-korean-patch/releases)에서 내려받기) |
+| 패치 파일 | `TimeTravelers_KR_v1.10.xdelta` ([릴리스](https://github.com/snake759494/time-travelers-korean-patch/releases)에서 내려받기) |
 | 적용 도구 | [xdelta3](https://github.com/jmacd/xdelta-gpl/releases) 또는 xdeltaUI |
 
 ### 원본 ISO 해시 (반드시 확인)
@@ -44,8 +44,8 @@ md5sum "Time Travelers.iso"
 ```
 파일명 : Time Travelers (KR).iso
 크기   : 1,176,698,880 바이트
-MD5    : b90da299e3d91141e8bd77baa95c8322
-SHA-1  : 7976f80dabbf192cc03aed9501cd0ecb80728952
+MD5    : 249b6b8d0a26d358e9b63365a84d0948
+SHA-1  : 82a44be14b8a6fe3edeeb4a5b5793c4ed4e9eb9f
 ```
 
 이 값과 일치하면 정상적으로 적용된 것입니다.
@@ -59,7 +59,7 @@ SHA-1  : 7976f80dabbf192cc03aed9501cd0ecb80728952
 원본 ISO와 `.xdelta` 파일을 같은 폴더에 두고:
 
 ```bash
-xdelta3 -d -f -s "Time Travelers.iso" "TimeTravelers_KR_v1.9.xdelta" "Time Travelers (KR).iso"
+xdelta3 -d -f -s "Time Travelers.iso" "TimeTravelers_KR_v1.10.xdelta" "Time Travelers (KR).iso"
 ```
 
 * `-d` 디코드(적용) · `-f` 출력 파일 덮어쓰기 허용 · `-s` 원본(소스) 지정
@@ -71,7 +71,7 @@ Windows에서 `xdelta3.exe` 대신 `xdelta.exe`로 배포된 빌드를 쓴다면
 ### 방법 B — xdeltaUI (그래픽)
 
 1. `xdeltaUI.exe` 실행 → **Apply Patch** 탭
-2. **Patch** — 내려받은 `TimeTravelers_KR_v1.9.xdelta`
+2. **Patch** — 내려받은 `TimeTravelers_KR_v1.10.xdelta`
 3. **Source File** — 원본 `Time Travelers.iso`
 4. **Output File** — 만들 파일 이름 (예: `Time Travelers (KR).iso`)
 5. **Apply** 클릭
@@ -97,8 +97,7 @@ Windows에서 `xdelta3.exe` 대신 `xdelta.exe`로 배포된 빌드를 쓴다면
 | 타임 트래블 차트 | 489개 |
 | 메뉴·시스템 메시지 (Lua) | 170개 |
 | 실행 파일 내 메시지 (EBOOT) | 52개 |
-| 메뉴 이미지 라벨 (버튼·제목 등) | 294개 |
-| 부팅 경고 화면 (WARNING · CAUTION) | 9줄 |
+| 메뉴 이미지 라벨 (버튼·제목·옵션 화면 등) | 294개 |
 | 캐릭터 소개 텔롭 | 24장 |
 | 동영상 자막 | 5개 영상 |
 
@@ -116,11 +115,15 @@ Windows에서 `xdelta3.exe` 대신 `xdelta.exe`로 배포된 빌드를 쓴다면
   프레임 단위로 대조하면 검출된 일본어 자막 구간 119개 중 97개에 대응하는 한글이
   있고, 나머지 22개는 영문 캐스트 크레딧이거나 밝은 장면을 자막으로 잘못 잡은
   구간입니다. 구간표는 `tools/cues/` 에 있습니다.
-* 스태프롤은 `.cfg.bin` 이 원본보다 커지는 유일한 파일입니다(29,888 → 30,896바이트).
-  일본 인명을 한글로 적으면 한자보다 길어져 크기를 지키면서 넣을 방법이 없기 때문이며,
-  그렇게 하지 않으면 이름 끝이 잘립니다. 파일 머리말의 문자열 표 길이와 CPK 목록의
-  두 크기를 모두 갱신하고 압축 후에도 슬롯 안에 들어가지만, **엔딩까지 실제로
-  돌려 확인한 적은 없습니다.** 크레딧이 이상하면 이 한 곳만 되돌리면 됩니다.
+* **스태프롤의 긴 이름 줄은 끝이 잘립니다.** 일본 인명을 한글로 적으면 한자보다
+  길어(`込山 拓哉` 9바이트, `코미야마 타쿠야` 15바이트) 232줄이 제 슬롯에 들어가지
+  못하고, 공백을 전부 없애도 360바이트가 남습니다. v1.9는 이 파일 하나를 키워
+  해결했지만 **그 판이 PSP-3000에서 부팅되지 않아** v1.10에서 되돌렸습니다.
+* **부팅 직후의 WARNING / CAUTION 화면은 일본어 그대로입니다.** 이 두 장은 바깥
+  CPK에 있어 v1.9에서 처음 손댔고, 위와 함께 되돌렸습니다. 두 변경 모두 정적 검사
+  (픽셀 블록 정렬·압축 방식·인코더 변종·CRILAYLA 형태)를 통과하므로 어느 쪽이
+  원인인지는 실기에서 하나씩 켜 봐야 압니다. `tools/verify_hw.py` 가 실기에서 검증된
+  범위를 벗어나는 빌드를 거부하며, 이 두 항목은 그 범위 밖입니다.
 * 누락 글리프 검사 결과 0건입니다. 실행 파일 안의 메시지와 챕터 카드 라벨도
   한글로 들어갑니다 — EBOOT를 디스크와 같은 태그로 다시 서명하는 방식입니다
   (`docs/TECHNICAL.md` 5장).
@@ -156,11 +159,14 @@ MOVIE_DIR = r'...\movie'                       # 자막 입힌 .pmf
 ### 빌드
 
 ```bash
-python tools/pack_korean.py   # 본 빌드 — 텍스트·폰트·메뉴 이미지
+python tools/pack_korean.py   # 본 빌드 — 텍스트·폰트·메뉴 이미지 (매번 원본 ISO에서 새로 시작)
 python tools/verify_all.py    # 검증 — 누락 글리프 0 이어야 정상
+python tools/verify_hw.py     # 실기 검증 범위 검사 — 하나라도 걸리면 배포하지 않습니다
 ```
 
-텍스트·폰트·메뉴 이미지는 위 두 줄이면 그대로 재현됩니다.
+텍스트·폰트·메뉴 이미지는 위 세 줄이면 그대로 재현됩니다. `verify_hw.py` 는 실기(PSP-3000)에서
+동작이 확인된 메커니즘 밖의 변경 — 파일 위치 이동, `.cfg.bin` 크기 증가, 텍스처 정렬·압축
+방식 변화, 바깥 CPK의 폰트 외 변경 — 을 찾아내 빌드를 거부합니다.
 
 ### 동영상은 재현 조건이 다릅니다
 
@@ -179,7 +185,7 @@ PSMF 툴**(`psmfenc` → `psmfmux` → `PsmfComposerCMD`)을 호출합니다. �
 ### xdelta 만들기
 
 ```bash
-xdelta3 -e -9 -f -s "Time Travelers.iso" "Time Travelers (KR).iso" "TimeTravelers_KR_v1.9.xdelta"
+xdelta3 -e -9 -f -s "Time Travelers.iso" "Time Travelers (KR).iso" "TimeTravelers_KR_v1.10.xdelta"
 ```
 
 ---
@@ -197,6 +203,7 @@ tools/          빌드·추출·검증 도구 (Python)
   cfgbin.py         Level-5 .cfg.bin 읽기/쓰기
   menu_tex.py       메뉴 이미지 라벨 다시 그리기
   verify_all.py     전체 검증
+  verify_hw.py      실기 검증 범위 검사 (배포 전 필수)
   cues/             영상별 자막 구간표 (JSON)
 translation/    번역 데이터 (JSON)
 docs/           기술 문서
