@@ -359,3 +359,47 @@ for _a in MAINMENU_ARCHIVES:
 OVER = {'title_new.xa': {'001.xi': (TITLE, 40)},
         'chara_sellect.xa': {'000.xi': (CHARSEL_OVER, 0)},
         'tutorial.xa': {'000.xi': (TUTORIAL_OVER, 0)}}
+
+# Lettering that carries its own colour, redrawn in that colour by
+# menu_tex.draw_styled: (box, text, fill, edge, align). Issue #3 -- the
+# time-travel chart and the time-stop list were the two screens still
+# headed in Japanese.
+#
+# The chart's standalone sheet: six coloured chapter headings (each box takes
+# in its furigana), and the thirteen name plates, whose Japanese line sits
+# over a romanised one that stays -- so those boxes stop above it.
+CHART_TEX = [
+    ((330, 257, 397, 286), '고교생 편', 'sat', 'light', 'c', 'ring'),
+    ((400, 257, 512, 289), '타임 트래블러 편', 'sat', 'light', 'c', 'ring'),
+    ((333, 290, 421, 313), '캐스터 편', 'sat', 'light', 'c', 'ring'),
+    ((345, 316, 421, 341), '루상치 편', 'sat', 'light', 'c', 'ring'),
+    ((357, 344, 419, 370), '사기꾼 편', 'sat', 'light', 'c', 'ring'),
+    ((152, 448, 199, 474), '형사 편', 'sat', 'light', 'c', 'ring'),
+    ((18, 97, 107, 115), '후카세 유리', 'dark', None, 'c', 'rows'),
+    ((145, 97, 236, 115), '신도 큐고', 'dark', None, 'c', 'rows'),
+    ((262, 97, 382, 115), '루상치☆맨', 'dark', None, 'c', 'rows'),
+    ((405, 97, 500, 115), '카미야 소마', 'dark', None, 'c', 'rows'),
+    ((18, 226, 107, 241), '후카세 유리', 'dark', None, 'c', 'rows'),
+    ((145, 226, 236, 241), '신도 큐고', 'dark', None, 'c', 'rows'),
+    ((262, 226, 382, 241), '루상치☆맨', 'dark', None, 'c', 'rows'),
+    ((405, 226, 500, 241), '카미야 소마', 'dark', None, 'c', 'rows'),
+    ((13, 351, 103, 367), '신도 미코토', 'dark', None, 'c', 'rows'),
+    ((126, 346, 208, 362), '후시미 히나', 'dark', None, 'c', 'rows'),
+    ((241, 346, 313, 362), '후시미 히나', 'dark', None, 'c', 'rows'),
+]
+CHART_TITLE = [((11, 7, 157, 30), '타임 트래블 차트', 'sat', None, 'l', 'rows')]
+# The time-stop list: its title, the count heading, and the five chapter
+# labels the list rows pick by name (hen_a..hen_e). Those are set flush right
+# against the time that follows them, as the Japanese was.
+TIMESTOP = [
+    ((286, 340, 464, 361), '타임 스톱 리스트', 'sat', None, 'r', 'ring'),
+    ((345, 364, 420, 387), '달성 수', 'common', None, 'c', 'ring'),
+    ((9, 368, 95, 392), '루상치 편', 'dark', 'light', 'r', 'ring'),
+    ((11, 392, 95, 416), '고교생 편', 'dark', 'light', 'r', 'ring'),
+    ((11, 416, 95, 440), '사기꾼 편', 'dark', 'light', 'r', 'ring'),
+    ((20, 440, 95, 464), '형사 편', 'dark', 'light', 'r', 'ring'),
+    ((1, 464, 95, 488), '캐스터 편', 'dark', 'light', 'r', 'ring'),
+]
+STYLED = {'timetravel_chart_tex.xi': {'000.xi': CHART_TEX},
+          'timetravel_chart.xa': {'000.xi': CHART_TITLE},
+          'timestoplistmenu.xa': {'000.xi': TIMESTOP}}

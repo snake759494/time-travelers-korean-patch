@@ -104,13 +104,47 @@ def remap_refs(head, old, new):
     return bytes(buf), n
 
 
+def remap_exact(b, base, old, new):
+    """Move the string offsets in the records, and nothing else.
+
+    The records ahead of the table are the .cfg.bin layout (see cfgbin):
+    crc, parameter count, two type bits per parameter, then the values. Only
+    parameters typed as strings hold table offsets, so exactly those move.
+    v1.10 and earlier guessed instead -- any aligned word equal to an old
+    offset and preceded by 00 00 or FF FF -- and missed 141 references in
+    nine scenes whose string parameter followed a hash, leaving those lines
+    pointing into the wrong text (issues #4, #5).
+    """
+    import cfgbin
+    fb, _, _ = fields(b)
+    s = fb - 4
+    if cfgbin.parse(b[s:]) is None:
+        return None
+    table = dict(zip(old, new))
+    buf = bytearray(b[:base])
+    n = struct.unpack('<I', b[s:s + 4])[0]
+    p = s + 16
+    for _ in range(n):
+        cnt, types = b[p + 4], b[p + 5]
+        for j in range(cnt):
+            q = p + 8 + 4 * j
+            v = struct.unpack('<I', b[q:q + 4])[0]
+            if not (types >> (2 * j)) & 3 and v != 0xFFFFFFFF:
+                buf[q:q + 4] = struct.pack('<I', table[v])
+        p += 8 + 4 * cnt
+    return bytes(buf)
+
+
 def join_strings(b, base, total, strs):
     data = b''.join(s + b'\x00' for s in strs)
     _, ft, _ = fields(b)
     tail = b[base + total:]
 
     old_strs = b[base:base + total].split(b'\x00')[:-1]
-    head, _ = remap_refs(b[:base], _offsets(old_strs), _offsets(strs))
+    head = remap_exact(b, base, _offsets(old_strs), _offsets(strs))
+    if head is None:
+        raise ValueError('blob does not parse as a typed record table; '
+                         'refusing to guess which words are string offsets')
 
     out = bytearray(head) + data + tail
     filler = tail[-1] if tail else 0xFF

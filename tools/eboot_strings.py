@@ -12,7 +12,9 @@ DUMP = r'D:\psp\ppsspp_win\memstick\PSP\SYSTEM\DUMP\NPJH50597_smp_rom.BIN'
 # Half-width katakana is excluded on purpose: the game never uses it, but
 # MIPS instruction words decode into it constantly and that noise otherwise
 # swamps the real strings.
-OK = re.compile(r'^[\u3000-\u30ff\u4e00-\u9fff\uff01-\uff60'
+# U+2606 is there for one name: \u30eb\u30b5\u30f3\u30c1\u2606\u30de\u30f3[\u7de8/\u3078\u3093], the chapter card's
+# heading, which without it never reached eboot.json (issue #3).
+OK = re.compile(r'^[\u3000-\u30ff\u4e00-\u9fff\uff01-\uff60\u2606'
                 r'\u2010-\u201f\u2026\u3001-\u303f'
                 r' -~\r\n\t]+$')
 JP = re.compile(r'[\u3040-\u30ff\u4e00-\u9fff]')

@@ -2,7 +2,7 @@
  "schema": "tt1-ui/1",
  "source": "PSP_GAME/SYSDIR/EBOOT.BIN",
  "note": "engine-drawn system messages; edited in the decrypted ELF",
- "count": 52,
+ "count": 54,
  "entries": [
   {
    "id": "eboot@2898688",
@@ -33,6 +33,12 @@
    "room": 19,
    "ja": "キャスター[編/へん]",
    "ko": "캐스터 편"
+  },
+  {
+   "id": "eboot@2899981",
+   "room": 23,
+   "ja": "ルサンチ☆マン[編/へん]",
+   "ko": "루상치☆맨 편"
   },
   {
    "id": "eboot@2900013",
@@ -147,6 +153,12 @@
    "room": 6,
    "ja": "いいえ",
    "ko": "아니오"
+  },
+  {
+   "id": "eboot@2930896",
+   "room": 22,
+   "ja": "[刑事/けいじ][編/へん]",
+   "ko": "형사 편"
   },
   {
    "id": "eboot@2930919",

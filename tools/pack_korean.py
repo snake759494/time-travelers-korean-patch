@@ -80,7 +80,7 @@ DNS_LIMIT = 0
 #   pck  chapter dialogue         cfg  tips, tutorials, help, outlines
 #   flo  time-travel chart        scn  choices
 #   menu menu artwork             lua  menu and system messages
-DNS_STAGES = frozenset(['pck', 'cfg', 'flo', 'scn', 'menu', 'lua', 'table',
+DNS_STAGES = frozenset(['pck', 'cfg', 'flo', 'scn', 'menu', 'lua', 'table', 'qte',
                         'call', 'telop'])
 # 'notice' -- the two boot screens (caution.xa, autosave_caution.xa) -- is
 # off. It is the other mechanism v1.9 introduced and v1.9 does not boot on a
@@ -547,7 +547,8 @@ def patch_menu(c, d):
     # its guidance line on nothing and its name plates on colour -- so the
     # jobs for one texture are a list, not one entry that replaces the other.
     jobs = {}
-    for tag, table in (('clear', menu_ko.SPRITES), ('over', menu_ko.OVER)):
+    for tag, table in (('clear', menu_ko.SPRITES), ('over', menu_ko.OVER),
+                       ('styled', menu_ko.STYLED)):
         for name, sheets in table.items():
             for k, v in sheets.items():
                 jobs.setdefault(name, {}).setdefault(k, []).append((tag, v))
@@ -556,7 +557,12 @@ def patch_menu(c, d):
             continue
         e = [x for x in c.files if x['name'] == name][0]
         blob = bytearray(c.read(e))
-        parts = {p['name']: p for p in xpck.parse(bytes(blob))}
+        if name.endswith('.xi'):
+            # a bare texture, not an archive (timetravel_chart_tex.xi)
+            parts = {'000.xi': {'name': '000.xi', 'offset': 0,
+                                'data': bytes(blob)}}
+        else:
+            parts = {p['name']: p for p in xpck.parse(bytes(blob))}
         hit = 0
         for xi_name, todo in sheets.items():
             if (name, xi_name) in MENU_SKIP:
@@ -569,6 +575,13 @@ def patch_menu(c, d):
             for mode, spec in todo:
                 if mode == 'clear':
                     hit += menu_tex.draw_all(ind, pal, spec.items())
+                elif mode == 'styled':
+                    for box, text, fill, edge, align, bg in spec:
+                        if menu_tex.draw_styled(ind, pal, box, text, fill,
+                                                edge, align=align, bg=bg):
+                            hit += 1
+                        else:
+                            skipped.append((name, text))
                 else:
                     boxes, bg = spec
                     for x0, y0, x1, y1, text in boxes:
@@ -598,6 +611,39 @@ def patch_menu(c, d):
                       (row + 8, struct.pack('>I', len(comp))),
                       (row + 12, struct.pack('>I', len(out)))]
         done += hit
+    return edits, done, skipped
+
+
+def patch_qte(c, d, table):
+    """The quiz answers in the R03 interview (ui_json/qte.json).
+
+    Lua literals inside a chapter bundle, stored uncompressed: the Korean is
+    written between the original quotes and the bytes it frees are given back
+    as spaces after the closing quote, so every file keeps its length and
+    nothing else in the bundle moves.
+    """
+    import extract_qte
+    doc = json.load(open(os.path.join(UI_DIR, 'qte.json'), encoding='utf-8'))
+    want = {e['id']: e for e in doc['entries'] if e.get('ko', '').strip()}
+    edits, done, skipped = [], 0, []
+    for name, (off, src) in sorted(extract_qte.qte_files(d, c).items()):
+        out = bytearray(src)
+        touched = False
+        for a, b, t in extract_qte.drawn(src):
+            e = want.get('%s@%d' % (name, a))
+            if e is None or e['ja'] != t:
+                continue
+            raw = recode(e['ko'], table)
+            if len(raw) > b - a:
+                skipped.append((e['id'], len(raw), b - a))
+                continue
+            # a .. b is the text between the quotes; b is the closing quote
+            out[a:b + 1] = raw + b'"' + b' ' * (b - a - len(raw))
+            touched = True
+            done += 1
+        if touched:
+            assert len(out) == len(src)
+            edits.append((off, bytes(out)))
     return edits, done, skipped
 
 
@@ -1148,6 +1194,9 @@ _TIP = _re.compile(r'(<TIP\d*>)(.*?)(</TIP>)', _re.S)
 _RUBY = _re.compile(r'^\[([^/\]]*)/([^\]]*)\]$')
 
 
+_MODELHEAD = _re.compile(r'^((?::[a-z]+=[^:]*)+:)(　*)')
+
+
 def normalize(ja, ko):
     """Undo translator habits the engine cannot parse.
 
@@ -1158,6 +1207,16 @@ def normalize(ja, ko):
     # Tags the source itself uses are authoritative, whatever they look like:
     # <ICON"font_18"> is real markup, not a typo to be cleaned up.
     known = set(_ANYTAG.findall(ja))
+
+    # A TIPS page that shows a model opens with a run of full-width spaces
+    # right after the :model=...:pos=...: header -- that is what keeps the
+    # first line clear of the picture (the engine only steps around it from
+    # the second line on). Six translations had lost or shortened the run, so
+    # their first line ran under the picture (issue #3).
+    mj = _MODELHEAD.match(ja)
+    mk = _MODELHEAD.match(ko)
+    if mj and mk and mj.group(1) == mk.group(1) and mj.group(2):
+        ko = mk.group(1) + mj.group(2) + ko[mk.end():]
 
     def fixtag(m):
         s = m.group(0)
@@ -1807,6 +1866,11 @@ def main(dry=False, nofont=False):
     print('character telops: %d plates redrawn' % telop_done)
     if telop_skip:
         print('  left in Japanese: %s' % telop_skip[:4])
+    qte_edits, qte_done, qte_skip = patch_qte(c, d, table)
+    edits += stage('qte', qte_edits)
+    print('quiz answers: %d QTE labels' % qte_done)
+    if qte_skip:
+        raise SystemExit('QTE labels that do not fit: %s' % qte_skip)
     movie_edits = patch_movie()
     print('opening movie: %d subtitled .pmf' % len(movie_edits))
     tbl_edits, tbl_done, tbl_skip = patch_table.patch(

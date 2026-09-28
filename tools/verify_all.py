@@ -61,6 +61,7 @@ ROUTE = {'eboot.json': 'telop_main.xf', 'lua.json': 'telop_main.xf',
          'outline.json': 'ttp_main.xf', 'table.json': 'ttp_main.xf',
          'flo.json': 'telop_main.xf',
          'choice.json': 'nrm_sub.xf', 'call.json': 'nrm_sub.xf',
+         'qte.json': 'nrm_main.xf',
          'dialogue': 'nrm_sub.xf',
          'chapter name': 'telop_player.xf',
          'character label': 'telop_sp.xf'}

@@ -16,10 +16,19 @@ OUT = r'D:\psp\타임트레블러즈\ui_json\eboot.json'
 LO, HI = 2880000, 2960000
 
 
+# Strings the scan cannot see because the byte before them is not a NUL:
+# the second list of chapter names opens with [刑事/けいじ][編/へん] packed
+# straight after a table, so its first byte is not a string start to scan.
+EXTRA = (2930896,)
+
+
 def targets(d):
     """[(offset, room, ja)] for every string the game itself draws."""
     out = []
-    for o, t in E.scan(d):
+    found = list(E.scan(d))
+    for o in EXTRA:
+        found.append((o, d[o:d.index(b'\x00', o)].decode('cp932')))
+    for o, t in sorted(found):
         if not LO <= o <= HI:
             continue
         if any(a <= o < b for a, b in UTILITY):

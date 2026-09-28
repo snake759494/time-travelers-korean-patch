@@ -12,7 +12,7 @@
 | 항목 | 내용 |
 |---|---|
 | 원본 ISO | `Time Travelers.iso` — 아래 해시와 **정확히 일치**해야 합니다 |
-| 패치 파일 | `TimeTravelers_KR_v1.10.xdelta` ([릴리스](https://github.com/snake759494/time-travelers-korean-patch/releases)에서 내려받기) |
+| 패치 파일 | `TimeTravelers_KR_v1.11.xdelta` ([릴리스](https://github.com/snake759494/time-travelers-korean-patch/releases)에서 내려받기) |
 | 적용 도구 | [xdelta3](https://github.com/jmacd/xdelta-gpl/releases) 또는 xdeltaUI |
 
 ### 원본 ISO 해시 (반드시 확인)
@@ -44,8 +44,8 @@ md5sum "Time Travelers.iso"
 ```
 파일명 : Time Travelers (KR).iso
 크기   : 1,176,698,880 바이트
-MD5    : 249b6b8d0a26d358e9b63365a84d0948
-SHA-1  : 82a44be14b8a6fe3edeeb4a5b5793c4ed4e9eb9f
+MD5    : 16d2f2392d0ad5e2fd4a8a09cddb28bc
+SHA-1  : 7044a3f3192a0af538a21bddf3eacd12be0357e1
 ```
 
 이 값과 일치하면 정상적으로 적용된 것입니다.
@@ -59,7 +59,7 @@ SHA-1  : 82a44be14b8a6fe3edeeb4a5b5793c4ed4e9eb9f
 원본 ISO와 `.xdelta` 파일을 같은 폴더에 두고:
 
 ```bash
-xdelta3 -d -f -s "Time Travelers.iso" "TimeTravelers_KR_v1.10.xdelta" "Time Travelers (KR).iso"
+xdelta3 -d -f -s "Time Travelers.iso" "TimeTravelers_KR_v1.11.xdelta" "Time Travelers (KR).iso"
 ```
 
 * `-d` 디코드(적용) · `-f` 출력 파일 덮어쓰기 허용 · `-s` 원본(소스) 지정
@@ -71,7 +71,7 @@ Windows에서 `xdelta3.exe` 대신 `xdelta.exe`로 배포된 빌드를 쓴다면
 ### 방법 B — xdeltaUI (그래픽)
 
 1. `xdeltaUI.exe` 실행 → **Apply Patch** 탭
-2. **Patch** — 내려받은 `TimeTravelers_KR_v1.10.xdelta`
+2. **Patch** — 내려받은 `TimeTravelers_KR_v1.11.xdelta`
 3. **Source File** — 원본 `Time Travelers.iso`
 4. **Output File** — 만들 파일 이름 (예: `Time Travelers (KR).iso`)
 5. **Apply** 클릭
@@ -96,8 +96,9 @@ Windows에서 `xdelta3.exe` 대신 `xdelta.exe`로 배포된 빌드를 쓴다면
 | 메일 · 일기 | 1,329개 문장 (약 38,000자) |
 | 타임 트래블 차트 | 489개 |
 | 메뉴·시스템 메시지 (Lua) | 170개 |
-| 실행 파일 내 메시지 (EBOOT) | 52개 |
-| 메뉴 이미지 라벨 (버튼·제목·옵션 화면 등) | 294개 |
+| 실행 파일 내 메시지 (EBOOT) | 54개 |
+| 면접 퀴즈 선택지 | 20개 |
+| 메뉴 이미지 라벨 (버튼·제목·옵션·차트·타임 스톱 리스트 등) | 319개 |
 | 캐릭터 소개 텔롭 | 24장 |
 | 동영상 자막 | 5개 영상 |
 
@@ -185,7 +186,7 @@ PSMF 툴**(`psmfenc` → `psmfmux` → `PsmfComposerCMD`)을 호출합니다. �
 ### xdelta 만들기
 
 ```bash
-xdelta3 -e -9 -f -s "Time Travelers.iso" "Time Travelers (KR).iso" "TimeTravelers_KR_v1.10.xdelta"
+xdelta3 -e -9 -f -s "Time Travelers.iso" "Time Travelers (KR).iso" "TimeTravelers_KR_v1.11.xdelta"
 ```
 
 ---

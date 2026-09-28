@@ -74,6 +74,78 @@ def check_xi(where, name, xi_name, orig, new):
             % (where, name, xi_name, tm, pm, tmn, pmn))
 
 
+def check_pck(src, dst):
+    """Records address their strings by table offset, typed as strings in
+    the record header (the .cfg.bin layout). Rebuilding a table moves every
+    string, so every one of those references has to land on the string it
+    named before, and no number may change. v1.10 got 141 of these wrong in
+    nine scenes (issues #4, #5) -- lines that showed the wrong text, or only
+    the tail of one -- and nothing checked it."""
+    import build_expand2 as B
+    import cfgbin
+    sp = {e['name']: e for e in src.files if e['dir'] == 'psp/txt/event/pck'}
+    dp = {e['name']: e for e in dst.files if e['dir'] == 'psp/txt/event/pck'}
+    blobs = refs = 0
+    for name in sorted(sp):
+        ra, rb = src.read(sp[name]), dst.read(dp[name])
+        _, reca = B.blobs_of(ra)
+        _, recb = B.blobs_of(rb)
+        if len(reca) != len(recb):
+            bad('dialogue: %s blob count changed' % name)
+            continue
+        for bi, ((_, oa, sa), (_, ob, sb)) in enumerate(zip(reca, recb)):
+            ba, bb = ra[oa:oa + sa], rb[ob:ob + sb]
+            if ba == bb or len(ba) < 20:
+                continue
+            s0 = B.fields(ba)[0] - 4
+            ca, cb = cfgbin.parse(ba[s0:]), cfgbin.parse(bb[s0:])
+            if ca is None or cb is None:
+                bad('dialogue: %s block %d no longer reads as a record '
+                    'table' % (name, bi))
+                continue
+            blobs += 1
+            ia, ib = ca.index(), cb.index()
+            if len(ca.ents) != len(cb.ents) or len(ca.strs) != len(cb.strs):
+                bad('dialogue: %s block %d record/string count changed'
+                    % (name, bi))
+                continue
+            for (crc, n, t, pa), (crc2, n2, t2, pb) in zip(ca.ents, cb.ents):
+                if (crc, n, t) != (crc2, n2, t2):
+                    bad('dialogue: %s block %d record header changed'
+                        % (name, bi))
+                    break
+                for j, (va, vb) in enumerate(zip(pa, pb)):
+                    if (t >> (2 * j)) & 3 or va == cfgbin.NONE:
+                        if va != vb:
+                            bad('dialogue: %s block %d number %d -> %d'
+                                % (name, bi, va, vb))
+                        continue
+                    refs += 1
+                    if ib.get(vb) != ia[va]:
+                        bad('dialogue: %s block %d string reference %d '
+                            'points at the wrong line' % (name, bi, j))
+    print('dialogue: %d rebuilt blocks, %d string references checked'
+          % (blobs, refs))
+
+
+def check_qte(src_d, src, dst_d, dst):
+    import extract_qte
+    import re
+    a = extract_qte.qte_files(src_d, src)
+    b = extract_qte.qte_files(dst_d, dst)
+    def strip(x):
+        return re.sub(rb'\s+', b'', re.sub(rb'"[^"\r\n]*"', b'""', x))
+    n = 0
+    for name, (off, sa) in a.items():
+        ob, sb = b[name]
+        if sa == sb:
+            continue
+        n += 1
+        if off != ob or len(sa) != len(sb) or strip(sa) != strip(sb):
+            bad('qte: %s changed outside its quoted answers' % name)
+    print('quiz scripts: %d rewritten, literals only' % n)
+
+
 def main():
     src_d, dst_d = dnsfile.DNSFile(P.SRC), dnsfile.DNSFile(ISO)
     src, dst = cpk.CPK(src_d), cpk.CPK(dst_d)
@@ -109,7 +181,7 @@ def main():
 
     # ---- rewritten menu sheets ----
     sheets = collections.defaultdict(set)
-    for tbl in (menu_ko.SPRITES, menu_ko.OVER):
+    for tbl in (menu_ko.SPRITES, menu_ko.OVER, menu_ko.STYLED):
         for n, s in tbl.items():
             sheets[n] |= set(s)
     n_xi = 0
@@ -120,8 +192,12 @@ def main():
             b = next((x for k, x in de.items() if k[1] == name), None)
         if a is None or b is None:
             continue
-        pa = {p['name']: p for p in xpck.parse(src.read(a))}
-        pb = {p['name']: p for p in xpck.parse(dst.read(b))}
+        if name.endswith('.xi'):            # a bare texture, not an archive
+            pa = {'000.xi': {'data': src.read(a)}}
+            pb = {'000.xi': {'data': dst.read(b)}}
+        else:
+            pa = {p['name']: p for p in xpck.parse(src.read(a))}
+            pb = {p['name']: p for p in xpck.parse(dst.read(b))}
         for x in xis:
             check_xi('menu', name, x, pa[x]['data'], pb[x]['data'])
             n_xi += 1
@@ -142,6 +218,11 @@ def main():
                      pb['000.xi']['data'])
             n_xi += 1
     print('textures: %d rewritten .xi checked' % n_xi)
+
+    # ---- dialogue: every record still points at the string it did ----
+    check_pck(src, dst)
+    # ---- quiz answers: only the text between the quotes changed ----
+    check_qte(src_d, src, dst_d, dst)
 
     # ---- outer CPK: nothing but the two fonts may differ ----
     so = cpk.CPK(P.SRC, base=P.CPK_LBA * P.SEC)

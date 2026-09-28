@@ -480,3 +480,106 @@ def draw_notice(ind, pal, items, pad=2):
         area[:] = np.where(cov > 0.02, pick, area)
         out += 1
     return out
+
+
+def _pick(p, idx, rule):
+    """One palette index out of `idx` by `rule`: dark, light, sat or common."""
+    idx = np.asarray(idx)
+    idx = idx[p[idx, 3] > 128]
+    if not len(idx):
+        return None
+    vals, freq = np.unique(idx, return_counts=True)
+    rgb = p[vals, :3].astype(np.int32)
+    if rule == 'dark':
+        return int(vals[rgb.sum(1).argmin()])
+    if rule == 'light':
+        return int(vals[rgb.sum(1).argmax()])
+    if rule == 'sat':
+        # weight saturation by how often it occurs so a stray pixel of
+        # antialiasing does not win over the lettering's own colour
+        sat = (rgb.max(1) - rgb.min(1)) * np.sqrt(freq)
+        return int(vals[sat.argmax()])
+    return int(vals[freq.argmax()])
+
+
+def draw_styled(ind, pal, box, text, fill='sat', edge=None, pad=1,
+                align='c', ttf=None, bg='rows'):
+    """Replace lettering that has its own colour, keeping that colour.
+
+    For labels that are neither the white-on-pill of draw_over nor the grey
+    ramp of draw: the coloured chapter headings of the time-travel chart and
+    the time-stop list, the chart's name plates, the orange screen titles.
+    The background of each row is its commonest index (the lettering never
+    covers a whole row), which is transparent where the label floats on
+    nothing -- so alpha is composited properly rather than copied from the
+    background. The fill and the edge are picked from the retail lettering
+    by `fill` / `edge` ('dark', 'light', 'sat', 'common'; edge may be None).
+    """
+    x0, y0, x1, y1 = clip(ind, box)
+    if x1 - x0 < 6 or y1 - y0 < 6:
+        return False
+    p = np.array(pal, np.int16)
+    area = ind[y0:y1, x0:x1]
+    back = np.empty_like(area)
+    if bg == 'ring':
+        # a label floating on nothing: its outline can fill whole rows, so
+        # the rows cannot say what is behind it -- the ring around it can
+        back[:] = around(ind, (x0, y0, x1, y1))
+    else:
+        for r in range(area.shape[0]):
+            vals, freq = np.unique(area[r], return_counts=True)
+            back[r] = vals[freq.argmax()]
+    letter = area[area != back]
+    fi = _pick(p, letter, fill)
+    if fi is None:
+        return False
+    ei = _pick(p, letter, edge) if edge else None
+    w, h = x1 - x0, y1 - y0
+    f_path = ttf or TTF
+    for size in range(h + 2, 5, -1):
+        f = ImageFont.truetype(f_path, size)
+        tmp = Image.new('L', (w * 4, h * 4), 0)
+        edg = Image.new('L', (w * 4, h * 4), 0)
+        ImageDraw.Draw(tmp).text((w * 2, h * 2), text, font=f, fill=255,
+                                 anchor='mm')
+        ImageDraw.Draw(edg).text((w * 2, h * 2), text, font=f, fill=255,
+                                 anchor='mm', stroke_width=1 if ei is not None
+                                 else 0, stroke_fill=255)
+        bb = edg.getbbox()
+        if bb and bb[2] - bb[0] <= w - pad and bb[3] - bb[1] <= h - pad:
+            break
+    else:
+        return False
+    cov = np.zeros((h, w), np.float32)
+    out = np.zeros((h, w), np.float32)
+    c = np.asarray(tmp.crop(bb), np.uint8)
+    e = np.asarray(edg.crop(bb), np.uint8)
+    oy = (h - c.shape[0]) // 2
+    ox = {'l': pad // 2, 'r': w - c.shape[1] - pad // 2}.get(
+        align, (w - c.shape[1]) // 2)
+    cov[oy:oy + c.shape[0], ox:ox + c.shape[1]] = c / 255.0
+    out[oy:oy + e.shape[0], ox:ox + e.shape[1]] = e / 255.0
+    if ei is None:
+        out = cov
+
+    bgc = p[back].astype(np.float32)                   # h, w, 4
+    fg = p[fi].astype(np.float32)
+    dk = p[ei].astype(np.float32) if ei is not None else fg
+
+    def over(dst, col, a):
+        """`col` at coverage `a` over `dst`, straight alpha."""
+        a = a[:, :, None]
+        ca = col[3] / 255.0 * a
+        da = dst[:, :, 3:4] / 255.0
+        oa = ca + da * (1 - ca)
+        rgb = (col[:3] * ca + dst[:, :, :3] * da * (1 - ca)) / np.maximum(oa, 1e-6)
+        return np.concatenate([rgb, oa * 255.0], 2)
+
+    want = over(bgc, dk, out)
+    want = over(want, fg, cov)
+    d = ((p[None, None, :, :].astype(np.float32) - want[:, :, None, :]) ** 2)
+    # alpha matters as much as colour: weigh it up so a transparent pixel
+    # never turns into an opaque black one of similar RGB
+    d[..., 3] *= 4
+    ind[y0:y1, x0:x1] = d.sum(3).argmin(2).astype(np.uint8)
+    return True
